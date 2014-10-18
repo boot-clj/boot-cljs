@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -e
+
+VERSION=${1:?}
+MESSAGE=${2:?}
+
+git tag -a -m "$MESSAGE" "$VERSION"
+git push --tags
+boot2 push -f target/*.jar -r deploy
