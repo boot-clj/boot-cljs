@@ -38,4 +38,4 @@
 (deftask push-release
   "Deploy release version to Clojars."
   [f file PATH str "The jar file to deploy."]
-  (push :file file :tag true :ensure-release true))
+  (push :file file :tag true :gpg-sign true :ensure-release true))
