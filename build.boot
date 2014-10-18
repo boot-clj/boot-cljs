@@ -9,7 +9,7 @@
 
 (require '[boot.git :as git])
 
-(def +VERSION+ "0.0-2371-0")
+(def +VERSION+ "0.0-2371-1")
 
 (task-options!
   pom [:project     'tailrecursion/boot-cljs
@@ -32,6 +32,7 @@
     :file           file
     :repo           "deploy"
     :tag            true
+    :ensure-branch  "master"
     :ensure-clean   true
     :ensure-release true
     :ensure-tag     (git/last-commit)
