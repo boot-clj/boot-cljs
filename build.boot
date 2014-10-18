@@ -9,7 +9,7 @@
 
 (require '[boot.git :as git])
 
-(def +VERSION+ "0.0-2371-1")
+(def +VERSION+ "0.0-2371-2")
 
 (task-options!
   push [:repo           "deploy"
