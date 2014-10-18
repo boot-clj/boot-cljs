@@ -12,28 +12,30 @@
 (def +VERSION+ "0.0-2371-1")
 
 (task-options!
-  pom [:project     'tailrecursion/boot-cljs
-       :version     +VERSION+
-       :description "Boot task to compile ClojureScript applications."
-       :url         "https://github.com/tailrecursion/boot-cljs"
-       :scm         {:url "https://github.com/tailrecursion/boot-cljs"}
-       :license     {:name "Eclipse Public License"
-                     :url  "http://www.eclipse.org/legal/epl-v10.html"}])
+  push [:repo           "deploy"
+        :ensure-branch  "master"
+        :ensure-clean   true
+        :ensure-tag     (git/last-commit)
+        :ensure-version +VERSION+]
+  pom  [:project        'tailrecursion/boot-cljs
+        :version        +VERSION+
+        :description    "Boot task to compile ClojureScript applications."
+        :url            "https://github.com/tailrecursion/boot-cljs"
+        :scm            {:url "https://github.com/tailrecursion/boot-cljs"}
+        :license        {:name "Eclipse Public License"
+                         :url  "http://www.eclipse.org/legal/epl-v10.html"}])
 
 (deftask build
   "Build jar and install to local repo."
   []
   (comp (pom) (add-src) (jar) (install)))
 
-(deftask release
+(deftask push-snapshot
+  "Deploy snapshot version to Clojars."
+  [f file PATH str "The jar file to deploy."]
+  (push :file file :ensure-snapshot true))
+
+(deftask push-release
   "Deploy release version to Clojars."
   [f file PATH str "The jar file to deploy."]
-  (push
-    :file           file
-    :repo           "deploy"
-    :tag            true
-    :ensure-branch  "master"
-    :ensure-clean   true
-    :ensure-release true
-    :ensure-tag     (git/last-commit)
-    :ensure-version +VERSION+))
+  (push :file file :tag true :ensure-release true))

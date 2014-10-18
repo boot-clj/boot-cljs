@@ -62,7 +62,8 @@
   (let [{incs ".inc.js"
          libs ".lib.js"
          exts ".ext.js"} (cljs-dep-files env)
-        copy  #(let [f (io/file %1 %2)] (->> f (pod/copy-url %3) .getPath))]
+        copy  #(let [f (io/file %1 %2)]
+                 (->> f (pod/copy-url %3) .getPath))]
     {:incs (for [x incs] (apply copy inc-dir x))
      :exts (for [x exts] (apply copy ext-dir x))
      :libs (for [x libs] (apply copy lib-dir x))}))

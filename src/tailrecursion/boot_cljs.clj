@@ -29,12 +29,12 @@
             (update-in [:dependencies] into cljs-deps)
             pod/make-pod future)
         output-path (or output-path "main.js")
+        inc-dir     (core/mktmpdir!)
         lib-dir     (core/mktmpdir!)
         ext-dir     (core/mktmpdir!)
         out-dir     (core/mktmpdir!)
         tgt-dir     (core/mktgtdir!)
         js-out      (io/file tgt-dir output-path)
-        inc-file    (io/file (core/mktmpdir!) "preamble.js")
         smap        (io/file tgt-dir (str output-path ".map"))
         smap-path   (str (.getParent (io/file output-path)))
         base-opts   {:libs          []
@@ -57,7 +57,7 @@
          :as instl} (pod/call-in @p
                       `(tailrecursion.boot-cljs.impl/install-dep-files
                          ~(core/get-env)
-                         ~(.getPath inc-file)
+                         ~(.getPath inc-dir)
                          ~(.getPath ext-dir)
                          ~(.getPath lib-dir)))]
     (core/with-pre-wrap
