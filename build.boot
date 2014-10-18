@@ -7,9 +7,13 @@
                   [boot/core                 "2.0.0-pre5" :scope "provided"]
                   [org.clojure/clojurescript "0.0-2371"   :scope "test"]])
 
+(require '[boot.git :as git])
+
+(def +VERSION+ "0.0-2371-0-SNAPSHOT")
+
 (task-options!
   pom [:project     'tailrecursion/boot-cljs
-       :version     "0.0-2371-0-SNAPSHOT"
+       :version     +VERSION+
        :description "Boot task to compile ClojureScript applications."
        :url         "https://github.com/tailrecursion/boot-cljs"
        :scm         {:url "https://github.com/tailrecursion/boot-cljs"}
@@ -20,3 +24,15 @@
   "Build jar and install to local repo."
   []
   (comp (pom) (add-src) (jar) (install)))
+
+(deftask release
+  "Deploy release version to Clojars."
+  [f file PATH str "The jar file to deploy."]
+  (push
+    :file           file
+    :repo           "deploy"
+    :tag            true
+    :ensure-clean   true
+    :ensure-release true
+    :ensure-tag     (git/last-commit)
+    :ensure-version +VERSION+))
