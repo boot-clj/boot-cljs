@@ -9,7 +9,7 @@
 
 (require '[boot.git :as git])
 
-(def +VERSION+ "0.0-2371-0-SNAPSHOT")
+(def +VERSION+ "0.0-2371-0")
 
 (task-options!
   pom [:project     'tailrecursion/boot-cljs
