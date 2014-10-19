@@ -5,7 +5,7 @@
                   [tailrecursion/boot-useful "0.1.0-SNAPSHOT" :scope "test"]
                   [org.clojure/clojurescript "0.0-2371"       :scope "test"]])
 
-(def +VERSION+ "0.0-2371-2")
+(def +VERSION+ "0.0-2371-3")
 
 (require
   '[tailrecursion.boot-useful :refer [push-snapshot push-release]])
