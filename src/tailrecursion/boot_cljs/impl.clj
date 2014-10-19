@@ -43,7 +43,7 @@
 
 (defn strip-marker
   [marker dep-files]
-  (->> dep-files (map (fn [[p u]] [(.replaceAll p (str "^" marker) "") u]))))
+  (->> dep-files (map (fn [[p u]] [(subs p (inc (count marker))) u]))))
 
 (defn group-by-exts
   [exts dep-files]
@@ -51,22 +51,27 @@
 
 (defn cljs-dep-files
   [env]
-  (let [marker "hoplon/include/"
+  (let [marker "hoplon/include"
         exts   [".inc.js" ".lib.js" ".ext.js"]]
     (->> (dep-files env marker exts)
       (strip-marker marker)
-      (group-by-exts exts))))
+      (group-by-exts exts)
+      (reduce-kv #(assoc %1 %2 (map second %3)) {}))))
+
+(defn hash-36
+  [s]
+  (Integer/toString (.hashCode s) 36))
 
 (defn install-dep-files
   [env inc-dir ext-dir lib-dir]
   (let [{incs ".inc.js"
          libs ".lib.js"
          exts ".ext.js"} (cljs-dep-files env)
-        copy  #(let [f (io/file %1 %2)]
-                 (->> f (pod/copy-url %3) .getPath))]
-    {:incs (for [x incs] (apply copy inc-dir x))
-     :exts (for [x exts] (apply copy ext-dir x))
-     :libs (for [x libs] (apply copy lib-dir x))}))
+         copy  #(let [h (str (hash-36 %2) ".js")]
+                  (.getPath (doto (io/file %1 h) ((partial pod/copy-url %2)))))]
+    {:incs (map (partial copy inc-dir) incs)
+     :exts (map (partial copy ext-dir) exts)
+     :libs (map (partial copy lib-dir) libs)}))
 
 (defrecord CljsSourcePaths [paths]
   cljs/Compilable
@@ -82,4 +87,5 @@
 (defn compile-cljs
   [src-paths {:keys [output-to] :as opts}]
   (binding [env/*compiler* (cljs-env opts)]
+    (prn :opts opts)
     (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts)))
