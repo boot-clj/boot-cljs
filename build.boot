@@ -1,5 +1,4 @@
 (set-env!
-  :src-paths    #{"src"}
   :dependencies '[[org.clojure/clojure       "1.6.0"          :scope "provided"]
                   [boot/core                 "2.0.0-pre5"     :scope "provided"]
                   [tailrecursion/boot-useful "0.1.0-SNAPSHOT" :scope "test"]
@@ -7,8 +6,7 @@
 
 (def +VERSION+ "0.0-2371-3")
 
-(require
-  '[tailrecursion.boot-useful :refer [push-snapshot push-release]])
+(require '[tailrecursion.boot-useful :refer :all])
 
 (task-options!
   pom  [:project        'tailrecursion/boot-cljs
