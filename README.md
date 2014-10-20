@@ -146,5 +146,5 @@ Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
 
 [1]: https://github.com/tailrecursion/boot
-[2]: http://clojars.org/tailrecursion/boot-cljs/latest-version.svg?cache=0
+[2]: http://clojars.org/tailrecursion/boot-cljs/latest-version.svg?cache=1
 [3]: http://clojars.org/tailrecursion/boot-cljs
