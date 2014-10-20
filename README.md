@@ -47,6 +47,10 @@ boot cljs
 
 The compiled JavaScript file will be `target/main.js`.
 
+## Preamble and GClosure Extern/Lib Files
+
+Foo bar baz.
+
 ## License
 
 Copyright © 2014 Micha Niskin and Alan Dipert
