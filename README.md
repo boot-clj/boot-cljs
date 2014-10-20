@@ -42,7 +42,7 @@ and add the following contents to `build.boot`:
 Then in a terminal:
 
 ```bash
-boot -s src cljs
+boot cljs
 ```
 
 The compiled JavaScript file will be `target/main.js`.
