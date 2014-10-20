@@ -18,19 +18,19 @@ Add `boot-cljs` to your `build.boot` dependencies and `require` the namespace:
 (require '[tailrecursion.boot-cljs :refer :all])
 ```
 
-You can see the options available in the repl:
+You can see the options available on the command line:
+
+```bash
+boot cljs -h
+```
+
+or in the REPL:
 
 ```bash
 boot repl
 ```
 ```clj
 boot.user=> (doc cljs)
-```
-
-or on the command line:
-
-```bash
-boot cljs -h
 ```
 
 ## Example
