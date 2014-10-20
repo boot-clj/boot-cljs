@@ -5,7 +5,8 @@
    [cljs.env        :as env]
    [cljs.closure    :as cljs])
   (:import
-   [java.net URL]))
+   [java.net URL]
+   [java.util UUID]))
 
 (defn jarfile-for
   [url]
@@ -58,16 +59,12 @@
       (group-by-exts exts)
       (reduce-kv #(assoc %1 %2 (map second %3)) {}))))
 
-(defn hash-36
-  [s]
-  (Integer/toString (.hashCode s) 36))
-
 (defn install-dep-files
   [env inc-dir ext-dir lib-dir]
   (let [{incs ".inc.js"
          libs ".lib.js"
          exts ".ext.js"} (cljs-dep-files env)
-         copy  #(let [h (str (hash-36 %2) ".js")]
+         copy  #(let [h (str (.toString (UUID/randomUUID)) ".js")]
                   (.getPath (doto (io/file %1 h) ((partial pod/copy-url %2)))))]
     {:incs (map (partial copy inc-dir) incs)
      :exts (map (partial copy ext-dir) exts)
@@ -87,5 +84,4 @@
 (defn compile-cljs
   [src-paths {:keys [output-to] :as opts}]
   (binding [env/*compiler* (cljs-env opts)]
-    (prn :opts opts)
     (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts)))
