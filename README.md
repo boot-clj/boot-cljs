@@ -26,9 +26,6 @@ boot cljs -h
 
 or in the REPL:
 
-```bash
-boot repl
-```
 ```clj
 boot.user=> (doc cljs)
 ```
