@@ -49,7 +49,22 @@ The compiled JavaScript file will be `target/main.js`.
 
 ## Preamble and GClosure Extern/Lib Files
 
-Foo bar baz.
+The `cljs` task figures out what to do with these files by scanning for
+resources on the classpath that have special filename extensions. They should
+be under `hoplon/include/` in the source directory or jar file.
+
+File extensions recognized by the `cljs` task:
+
+* `.inc.js`: JavaScript preamble files–these are prepended to the compiled
+  Javascript in dependency order (i.e. if jar B depends on jar A then entries
+  from A will be added to the JavaScript file such that they'll be evaluated
+  before entries from B).
+
+* `.ext.js`: GClosure externs files–hints to the Closure compiler that prevent
+  it from mangling external names under advanced optimizations.
+
+* `.lib.js`: GClosure lib files (JavaScript source compatible with the Google
+  Closure compiler).
 
 ## License
 
