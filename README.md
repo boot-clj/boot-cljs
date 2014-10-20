@@ -9,6 +9,17 @@ Boot task to compile ClojureScript applications.
   files can be included in Maven jar dependencies or from the project source
   directories.
 
+## Try It
+
+In a terminal do:
+
+```bash
+echo -e '(ns foop)\n(.log js/console "hello world")' > foop.cljs
+boot -d tailrecursion/boot-cljs cljs
+```
+
+The compiled JavaScript will be written to `main.js`.
+
 ## Usage
 
 Add `boot-cljs` to your `build.boot` dependencies and `require` the namespace:

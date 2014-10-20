@@ -1,4 +1,4 @@
-(ns tailrecursion.boot-cljs
+(ns ^:boot/export-tasks tailrecursion.boot-cljs
   (:require
    [clojure.java.io :as io]
    [boot.pod        :as pod]
