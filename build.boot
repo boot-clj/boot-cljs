@@ -6,7 +6,7 @@
 
 (require '[tailrecursion.boot-useful :refer :all])
 
-(def +version+ "0.0-2371-7")
+(def +version+ "0.0-2371-8")
 
 (useful! +version+)
 

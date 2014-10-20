@@ -65,7 +65,7 @@
           (reduce-kv #(assoc %1 %2 (->res %3)) {}))]
     (core/with-pre-wrap
       (io/make-parents js-out)
-      (util/info "Compiling ClojureScript...\n")
+      (util/info "Compiling %s...\n" (.getName js-out))
       (let [srcs  (core/src-files)
             cljs  (->> srcs (core/by-ext [".cljs"]))
             exts' (->> srcs (core/by-ext [".ext.js"]))
