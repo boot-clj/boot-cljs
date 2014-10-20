@@ -18,6 +18,21 @@ Add `boot-cljs` to your `build.boot` dependencies and `require` the namespace:
 (require '[tailrecursion.boot-cljs :refer :all])
 ```
 
+You can see the options available in the repl:
+
+```bash
+boot repl
+```
+```clj
+boot.user=> (doc cljs)
+```
+
+or on the command line:
+
+```bash
+boot cljs -h
+```
+
 ## Example
 
 Create a new ClojureScript project, like so:
