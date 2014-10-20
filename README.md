@@ -33,6 +33,23 @@ boot repl
 boot.user=> (doc cljs)
 ```
 
+## Preamble, Extern, and Lib Files
+
+The `cljs` task figures out what to do with these files by scanning for
+resources on the classpath that have special filename extensions. They should
+be under `hoplon/include/` in the source directory or jar file.
+
+File extensions recognized by the `cljs` task:
+
+* `.inc.js`: JavaScript preamble files–these are prepended to the compiled
+  Javascript in dependency order (i.e. if jar B depends on jar A then entries
+  from A will be added to the JavaScript file such that they'll be evaluated
+  before entries from B).
+* `.lib.js`: GClosure lib files (JavaScript source compatible with the Google
+  Closure compiler).
+* `.ext.js`: GClosure externs files–hints to the Closure compiler that prevent
+  it from mangling external names under advanced optimizations.
+
 ## Example
 
 Create a new ClojureScript project, like so:
@@ -62,22 +79,56 @@ boot cljs
 
 The compiled JavaScript file will be `target/main.js`.
 
-## Preamble and GClosure Extern/Lib Files
+### With Preamble and Externs
 
-The `cljs` task figures out what to do with these files by scanning for
-resources on the classpath that have special filename extensions. They should
-be under `hoplon/include/` in the source directory or jar file.
+Add preamble and extern files to the project, like so:
 
-File extensions recognized by the `cljs` task:
+```
+my-project
+├── build.boot
+└── src
+    ├── foop.cljs
+    └── hoplon
+        └── include
+            ├── barp.ext.js
+            └── barp.inc.js
+```
 
-* `.inc.js`: JavaScript preamble files–these are prepended to the compiled
-  Javascript in dependency order (i.e. if jar B depends on jar A then entries
-  from A will be added to the JavaScript file such that they'll be evaluated
-  before entries from B).
-* `.lib.js`: GClosure lib files (JavaScript source compatible with the Google
-  Closure compiler).
-* `.ext.js`: GClosure externs files–hints to the Closure compiler that prevent
-  it from mangling external names under advanced optimizations.
+Where the contents of `barp.inc.js` are:
+
+```javascript
+(function() {
+  window.Barp = {
+    bazz: function(x) {
+      return x + 1;
+    }
+  };
+})();
+```
+
+and `barp.ext.js` are:
+
+```javascript
+var Barp = {};
+Barp.bazz = function() {};
+```
+
+Then, in `foop.cljs` you may freely use `Barp`, like so:
+
+```clj
+(ns foop)
+
+(.log js/console "Barp.bazz(1) ==" (.bazz js/Barp 1))
+```
+
+Compile with advanced optimizations:
+
+```bash
+boot cljs -O advanced
+```
+
+You will see the preamble inserted at the top of `main.js`, and the references
+to `Barp.bazz()` are not mangled by the Closure compiler. Whew!
 
 ## License
 
