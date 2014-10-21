@@ -14,30 +14,54 @@
 
   Available optimization levels (default 'whitespace'):
 
-  none         No optimizations.
-  whitespace   Remove comments, unnecessary whitespace, and punctuation.
-  simple       Whitespace + local variable and function parameter renaming.
-  advanced     Simple + aggressive renaming, inlining, dead code elimination, etc."
+    * none         No optimizations.
+    * whitespace   Remove comments, unnecessary whitespace, and punctuation.
+    * simple       Whitespace + local variable and function parameter renaming.
+    * advanced     Simple + aggressive renaming, inlining, dead code elimination, etc.
 
-  [o output-path PATH  str  "The output js file path relative to docroot."
-   O optimizations OPT kw   "The optimization level."
-   p pretty-print      bool "Pretty-print compiled JS."
-   s source-map        bool "Create source map for compiled JS."
-   W no-warnings       bool "Suppress compiler warnings."]
+  The output-dir option is useful when using optimizations 'none' or when source
+  maps are enabled. This option sets the name of the subdirectory (relative to
+  the output-path–the compiled JavaScript file) in which GClosure intermediate
+  files will be written. The default name is 'out'.
+
+  When using optimization level 'none':
+
+    <body>
+      ...
+      <script type='text/javascript' src='out/goog/base.js'></script>
+      <script type='text/javascript' src='main.js'></script>
+      <script type='text/javascript'>goog.require('my.namespace')</script>
+    </body>
+
+  Any other optimization level:
+
+    <body>
+      ...
+      <script type='text/javascript' src='main.js'></script>
+    </body>
+
+  (Replace 'out', 'main.js', and 'my-namespace' with your own configuration.)"
+
+  [d output-dir NAME     str  "Subdirectory name for GClosure intermediate files."
+   o output-path PATH    str  "The output js file path relative to docroot."
+   O optimizations LEVEL kw   "The optimization level."
+   p pretty-print        bool "Pretty-print compiled JS."
+   s source-map          bool "Create source map for compiled JS."
+   W no-warnings         bool "Suppress compiler warnings."]
 
   (let [output-path (or output-path "main.js")
         inc-dir     (core/mksrcdir!)
         lib-dir     (core/mksrcdir!)
         ext-dir     (core/mksrcdir!)
-        tgt-dir     (core/mktgtdir!)
+        tgt-dir     (core/mktmpdir!)
+        stage-dir   (core/mktgtdir!)
         js-out      (io/file tgt-dir output-path)
         smap        (io/file tgt-dir (str output-path ".map"))
         js-parent   (str (.getParent (io/file output-path)))
         keep-out?   (or source-map (= :none optimizations))
         out-dir     (if-not keep-out?
                       (core/mktmpdir!)
-                      (let [o (core/mkrscdir!)]
-                        (if (empty? js-parent) o (io/file o js-parent))))
+                      (apply io/file tgt-dir (remove empty? [js-parent "out"])))
         base-opts   {:libs          []
                      :externs       []
                      :preamble      []
@@ -54,7 +78,6 @@
         ->res       (partial map core/resource-path)
         p           (-> (core/get-env)
                       (update-in [:dependencies] into cljs-deps)
-                      (update-in [:src-paths] disj (.getPath tgt-dir))
                       pod/make-pod future)
         {:keys [incs exts libs]}
         (->> (pod/call-in @p
@@ -80,5 +103,6 @@
                                                 :externs  (concat exts (->res exts'))
                                                 :preamble (concat incs (->res (sort incs')))})))
             (get :warnings 0)))
+        (core/sync! stage-dir tgt-dir)
         (when-not keep-out?
           (doseq [f (concat cljs exts' libs' incs')] (core/consume-file! f)))))))
