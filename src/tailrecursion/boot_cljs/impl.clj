@@ -81,6 +81,10 @@
   (compare-and-set! stored-env nil (env/default-compiler-env opts))
   @stored-env)
 
+#_(defn init!
+  [opts]
+  (reset! stored-env (env/default-compiler-env opts)))
+
 (defn compile-cljs
   [src-paths {:keys [output-to] :as opts}]
   (binding [env/*compiler* (cljs-env opts)]

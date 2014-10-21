@@ -29,11 +29,15 @@
         inc-dir     (core/mksrcdir!)
         lib-dir     (core/mksrcdir!)
         ext-dir     (core/mksrcdir!)
-        out-dir     (core/mktmpdir!)
         tgt-dir     (core/mktgtdir!)
         js-out      (io/file tgt-dir output-path)
         smap        (io/file tgt-dir (str output-path ".map"))
-        smap-path   (str (.getParent (io/file output-path)))
+        js-parent   (str (.getParent (io/file output-path)))
+        keep-out?   (or source-map (= :none optimizations))
+        out-dir     (if-not keep-out?
+                      (core/mktmpdir!)
+                      (let [o (core/mkrscdir!)]
+                        (if (empty? js-parent) o (io/file o js-parent))))
         base-opts   {:libs          []
                      :externs       []
                      :preamble      []
@@ -44,11 +48,8 @@
                      :pretty-print  (boolean pretty-print)
                      :optimizations (or optimizations :whitespace)}
         ;; src-map: see https://github.com/clojure/clojurescript/wiki/Source-maps
-        smap-opts   {:source-map-path smap-path
-                     :source-map      (.getPath smap)
-                     :output-dir      (.getPath (if (empty? smap-path)
-                                                  tgt-dir
-                                                  (io/file tgt-dir smap-path)))}
+        smap-opts   {:source-map-path js-parent
+                     :source-map      (.getPath smap)}
         cljs-opts   (merge base-opts (when source-map smap-opts))
         ->res       (partial map core/resource-path)
         p           (-> (core/get-env)
@@ -77,4 +78,5 @@
              ~(merge-with into cljs-opts {:libs     (concat libs (->res libs'))
                                           :externs  (concat exts (->res exts'))
                                           :preamble (concat incs (->res (sort incs')))})))
-        (doseq [f (concat cljs exts' libs' incs')] (core/consume-file! f))))))
+        (when-not keep-out?
+          (doseq [f (concat cljs exts' libs' incs')] (core/consume-file! f)))))))
