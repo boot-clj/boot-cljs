@@ -3,7 +3,8 @@
    [clojure.java.io :as io]
    [boot.pod        :as pod]
    [cljs.env        :as env]
-   [cljs.closure    :as cljs])
+   [cljs.closure    :as cljs]
+   [cljs.analyzer   :as ana])
   (:import
    [java.net URL]
    [java.util UUID]))
@@ -87,5 +88,12 @@
 
 (defn compile-cljs
   [src-paths {:keys [output-to] :as opts}]
-  (binding [env/*compiler* (cljs-env opts)]
-    (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts)))
+  (let [counter (atom 0)
+        handler (->> (fn [warning-type env & [extra]]
+                       (when (warning-type ana/*cljs-warnings*)
+                         (swap! counter inc)))
+                  (conj ana/*cljs-warning-handlers*))]
+    (ana/with-warning-handlers handler
+      (binding [env/*compiler* (cljs-env opts)]
+        (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts)))
+    {:warnings @counter}))

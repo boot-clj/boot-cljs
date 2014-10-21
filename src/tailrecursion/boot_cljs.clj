@@ -72,11 +72,13 @@
             exts' (->> srcs (core/by-ext [".ext.js"]))
             libs' (->> srcs (core/by-ext [".lib.js"]))
             incs' (->> srcs (core/by-ext [".inc.js"]))]
-        (pod/call-in @p
-          `(tailrecursion.boot-cljs.impl/compile-cljs
-             ~(seq (core/get-env :src-paths))
-             ~(merge-with into cljs-opts {:libs     (concat libs (->res libs'))
-                                          :externs  (concat exts (->res exts'))
-                                          :preamble (concat incs (->res (sort incs')))})))
+        (swap! core/*warnings* +
+          (-> (pod/call-in @p
+                `(tailrecursion.boot-cljs.impl/compile-cljs
+                   ~(seq (core/get-env :src-paths))
+                   ~(merge-with into cljs-opts {:libs     (concat libs (->res libs'))
+                                                :externs  (concat exts (->res exts'))
+                                                :preamble (concat incs (->res (sort incs')))})))
+            (get :warnings 0)))
         (when-not keep-out?
           (doseq [f (concat cljs exts' libs' incs')] (core/consume-file! f)))))))
