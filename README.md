@@ -138,6 +138,25 @@ boot cljs -O advanced
 You will see the preamble inserted at the top of `main.js`, and the references
 to `Barp.bazz()` are not mangled by the Closure compiler. Whew!
 
+### Incremental Builds
+
+You can run boot such that it watches `:src-paths` for changes to source files
+and recompiles the JavaScript file as necessary. This works best with `:none`
+optimizations, because that's the fastest way to compile.
+
+```bash
+boot watch cljs -O none
+```
+
+You can also get audible notifications whenever the project is rebuilt:
+
+```bash
+boot watch speak cljs -O none
+```
+
+> **Note:** The `watch` and `speak` tasks are not part of `boot-cljs`–they're
+> built-in tasks that come with boot.
+
 ## License
 
 Copyright © 2014 Micha Niskin and Alan Dipert
