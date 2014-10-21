@@ -148,8 +148,14 @@ optimizations, because that's the fastest way to compile.
 boot watch cljs -O none
 ```
 
-> **Note:** The `watch` task is not part of `boot-cljs`–it's a built-in task
-> that comes with boot.
+You can also get audible notifications whenever the project is rebuilt:
+
+```bash
+boot watch speak cljs -O none
+```
+
+> **Note:** The `watch` and `speak` tasks are not part of `boot-cljs`–they're
+> built-in tasks that come with boot.
 
 ## License
 
