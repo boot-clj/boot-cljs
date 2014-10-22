@@ -157,6 +157,59 @@ boot watch speak cljs -O none
 > **Note:** The `watch` and `speak` tasks are not part of `boot-cljs`–they're
 > built-in tasks that come with boot.
 
+### ClojureScript REPL
+
+You can also obtain a REPL in the browser (or in Nashorn et al) where you may
+evaluate ClojureScript expressions. Here is a sample `build.boot` file to get
+you started:
+
+```clj
+(set-env!
+  :src-paths    #{"src"}
+  :rsc-paths    #{"rsc"}
+  :dependencies '[[tailrecursion/boot-cljs   "0.0-2371-11" :scope "test"]
+                  ;;; cljs repl dependencies follow:
+                  [org.clojure/clojurescript "0.0-2371"    :scope "test"]
+                  [com.cemerick/piggieback   "0.1.3"       :scope "test"]
+                  [weasel                    "0.4.1"       :scope "test"]])
+
+(require
+  '[tailrecursion.boot-cljs :refer :all]
+  '[weasel.repl.websocket   :refer [repl-env]]
+  '[cemerick.piggieback     :refer [cljs-repl wrap-cljs-repl]])
+
+(task-options!
+  repl [:middleware [#'wrap-cljs-repl]])
+```
+
+This gets the build environment set up with the project dependencies you'll
+need. Then you need to connect to the REPL server from the ClojureScript client:
+
+```clj
+(ns foop
+  (:require [weasel.repl :as repl]))
+
+(if-not (repl/alive?)
+  (repl/connect "ws://localhost:9001"))
+
+(.log js/console "hello world")
+```
+
+Finally, fire up a REPL and build the project:
+
+```bash
+boot repl -s watch cljs -O none
+```
+
+This starts a REPL server and incremental compilation of ClojureScript. Then
+fire up a REPL client (in emacs via [cider], perhaps) and do:
+
+```clj
+boot.user=> (cljs-repl :repl-env (repl-env))
+```
+
+Boom.
+
 ## License
 
 Copyright © 2014 Micha Niskin and Alan Dipert
