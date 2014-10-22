@@ -49,7 +49,8 @@
    s source-map          bool "Create source map for compiled JS."
    W no-warnings         bool "Suppress compiler warnings."]
 
-  (let [output-path (or output-path "main.js")
+  (let [output-dir  (or output-dir "out")
+        output-path (or output-path "main.js")
         inc-dir     (core/mksrcdir!)
         lib-dir     (core/mksrcdir!)
         ext-dir     (core/mksrcdir!)
@@ -61,7 +62,7 @@
         keep-out?   (or source-map (= :none optimizations))
         out-dir     (if-not keep-out?
                       (core/mktmpdir!)
-                      (apply io/file tgt-dir (remove empty? [js-parent "out"])))
+                      (apply io/file tgt-dir (remove empty? [js-parent output-dir])))
         base-opts   {:libs          []
                      :externs       []
                      :preamble      []
