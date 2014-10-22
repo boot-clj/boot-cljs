@@ -220,3 +220,4 @@ your option) any later version.
 [1]: https://github.com/tailrecursion/boot
 [2]: http://clojars.org/tailrecursion/boot-cljs/latest-version.svg?cache=2
 [3]: http://clojars.org/tailrecursion/boot-cljs
+[cider]: https://github.com/clojure-emacs/cider
