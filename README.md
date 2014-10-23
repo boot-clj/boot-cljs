@@ -41,24 +41,7 @@ or in the REPL:
 boot.user=> (doc cljs)
 ```
 
-## Preamble, Extern, and Lib Files
-
-The `cljs` task figures out what to do with these files by scanning for
-resources on the classpath that have special filename extensions. They should
-be under `hoplon/include/` in the source directory or jar file.
-
-File extensions recognized by the `cljs` task:
-
-* `.inc.js`: JavaScript preamble files–these are prepended to the compiled
-  Javascript in dependency order (i.e. if jar B depends on jar A then entries
-  from A will be added to the JavaScript file such that they'll be evaluated
-  before entries from B).
-* `.lib.js`: GClosure lib files (JavaScript source compatible with the Google
-  Closure compiler).
-* `.ext.js`: GClosure externs files–hints to the Closure compiler that prevent
-  it from mangling external names under advanced optimizations.
-
-## Example
+### Example
 
 Create a new ClojureScript project, like so:
 
@@ -87,7 +70,24 @@ boot cljs
 
 The compiled JavaScript file will be `target/main.js`.
 
-### Source Maps
+## Preamble, Extern, and Lib Files
+
+The `cljs` task figures out what to do with these files by scanning for
+resources on the classpath that have special filename extensions. They should
+be under `hoplon/include/` in the source directory or jar file.
+
+File extensions recognized by the `cljs` task:
+
+* `.inc.js`: JavaScript preamble files–these are prepended to the compiled
+  Javascript in dependency order (i.e. if jar B depends on jar A then entries
+  from A will be added to the JavaScript file such that they'll be evaluated
+  before entries from B).
+* `.lib.js`: GClosure lib files (JavaScript source compatible with the Google
+  Closure compiler).
+* `.ext.js`: GClosure externs files–hints to the Closure compiler that prevent
+  it from mangling external names under advanced optimizations.
+
+## Source Maps
 
 [Source maps][src-maps] are handy for debugging ClojureScript applications.
 You can enable them with the `-s` option:
@@ -99,7 +99,7 @@ boot cljs -s
 > You may need to enable source maps in your browser's developer console
 > settings.
 
-### Compilation Levels
+## Compilation Levels
 
 The ClojureScript compiler uses the Google Closure compiler to generate
 optimized JavaScript when desired. There are [three different Closure
@@ -114,7 +114,7 @@ boot cljs -O advanced
 The default level is `whitespace`. Additionally, the `none` level can be
 specified to bypass the Closure compiler.
 
-### Preamble and Externs
+## Preamble and Externs
 
 Add preamble and extern files to the project, like so:
 
@@ -165,7 +165,7 @@ boot cljs -O advanced
 You will see the preamble inserted at the top of `main.js`, and the references
 to `Barp.bazz()` are not mangled by the Closure compiler. Whew!
 
-### Incremental Builds
+## Incremental Builds
 
 You can run boot such that it watches source files for changes and recompiles
 the JavaScript file as necessary:
