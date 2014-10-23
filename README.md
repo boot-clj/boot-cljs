@@ -189,7 +189,7 @@ boot.user=> (use 'tailrecursion.boot-cljs-repl)
 boot.user=> (start-repl)
 ```
 
-Boom.
+Load the page in a browser. Boom. REPL.
 
 ## License
 
