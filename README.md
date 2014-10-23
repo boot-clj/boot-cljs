@@ -159,8 +159,8 @@ boot watch speak cljs -O none
 
 ### ClojureScript REPL
 
-You can also obtain a REPL in the browser where you may evaluate ClojureScript
-expressions. Here is a sample `build.boot` file to get you started:
+You can also obtain a [browser REPL][boot-cljs-repl] where you may evaluate
+ClojureScript expressions. Here is a sample `build.boot` file to get you started:
 
 ```clj
 (set-env!
@@ -202,3 +202,4 @@ your option) any later version.
 [2]: http://clojars.org/tailrecursion/boot-cljs/latest-version.svg?cache=2
 [3]: http://clojars.org/tailrecursion/boot-cljs
 [cider]: https://github.com/clojure-emacs/cider
+[boot-cljs-repl]: https://github.com/tailrecursion/boot-cljs-repl
