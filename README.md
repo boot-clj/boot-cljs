@@ -174,7 +174,15 @@ ClojureScript expressions. Here is a sample `build.boot` file to get you started
 ```
 
 This gets the build environment set up with the project dependencies you'll
-need. Then, fire up a REPL and build the project:
+need. When compiling with optimization level `none` you must add a script tag to
+the page HTML to connect the client to the REPL server:
+
+```html
+<!-- Note: this is only needed when optimization level is :none -->
+<script type="text/javascript">goog.require('tailrecursion.boot_cljs_repl');</script>
+```
+
+Then, fire up a REPL and build the project:
 
 ```bash
 # note: cljs-repl task must come before cljs task
