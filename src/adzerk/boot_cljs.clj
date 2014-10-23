@@ -44,6 +44,7 @@
   (Replace 'out', 'main.js', and 'my-namespace' with your own configuration.)"
 
   [d output-dir NAME     str  "Subdirectory name for GClosure intermediate files."
+   n node-target         bool "Target Node.js for compilation"
    o output-path PATH    str  "The output js file path relative to docroot."
    O optimizations LEVEL kw   "The optimization level."
    p pretty-print        bool "Pretty-print compiled JS."
@@ -76,7 +77,9 @@
         ;; src-map: see https://github.com/clojure/clojurescript/wiki/Source-maps
         smap-opts   {:source-map-path js-parent
                      :source-map      (.getPath smap)}
-        cljs-opts   (merge base-opts (when source-map smap-opts))
+        cljs-opts   (merge base-opts
+                           (when source-map smap-opts)
+                           (when node-target {:target :nodejs}))
         ->res       (partial map core/resource-path)
         p           (-> (core/get-env)
                       (update-in [:dependencies] into cljs-deps)
