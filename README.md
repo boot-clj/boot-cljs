@@ -182,15 +182,14 @@ the page HTML to connect the client to the REPL server:
 <script type="text/javascript">goog.require('tailrecursion.boot_cljs_repl');</script>
 ```
 
-Then, fire up a REPL and build the project:
+Start the REPL server and build the project:
 
 ```bash
 # note: cljs-repl task must come before cljs task
 boot watch speak cljs-repl cljs -O none
 ```
 
-This starts a REPL server and incremental compilation of ClojureScript. Then
-fire up a REPL client (in emacs via [cider], perhaps) and do:
+Fire up a REPL client (in emacs via [cider], perhaps) and do:
 
 ```clj
 boot.user=> (start-repl)
