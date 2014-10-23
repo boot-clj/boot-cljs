@@ -159,43 +159,7 @@ boot watch speak cljs -O none
 
 ## Browser REPL
 
-You can also obtain a [browser REPL][boot-cljs-repl] where you may evaluate
-ClojureScript expressions. Here is a sample `build.boot` file to get you started:
-
-```clj
-(set-env!
-  :src-paths    #{"src"}
-  :dependencies '[[tailrecursion/boot-cljs      "0.0-2371-12" :scope "test"]
-                  [tailrecursion/boot-cljs-repl "0.1.0"       :scope "test"]])
-
-(require
-  '[tailrecursion.boot-cljs      :refer :all]
-  '[tailrecursion.boot-cljs-repl :refer :all])
-```
-
-This gets the build environment set up with the project dependencies you'll
-need. When compiling with optimization level `none` you must add a script tag to
-the page HTML to connect the client to the REPL server:
-
-```html
-<!-- Note: this is only needed when optimization level is :none -->
-<script type="text/javascript">goog.require('tailrecursion.boot_cljs_repl');</script>
-```
-
-Start the REPL server and build the project:
-
-```bash
-# note: cljs-repl task must come before cljs task
-boot watch speak cljs-repl cljs -O none
-```
-
-Fire up a REPL client (in emacs via [cider], perhaps) and do:
-
-```clj
-boot.user=> (start-repl)
-```
-
-Load the page in a browser. Boom. REPL.
+See the [tailrecursion/boot-cljs-repl][boot-cljs-repl] boot task.
 
 ## License
 
