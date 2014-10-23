@@ -165,7 +165,6 @@ ClojureScript expressions. Here is a sample `build.boot` file to get you started
 ```clj
 (set-env!
   :src-paths    #{"src"}
-  :rsc-paths    #{"rsc"}
   :dependencies '[[tailrecursion/boot-cljs      "0.0-2371-12" :scope "test"]
                   [tailrecursion/boot-cljs-repl "0.1.0"       :scope "test"]])
 
