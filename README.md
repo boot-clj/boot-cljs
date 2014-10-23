@@ -185,7 +185,6 @@ This starts a REPL server and incremental compilation of ClojureScript. Then
 fire up a REPL client (in emacs via [cider], perhaps) and do:
 
 ```clj
-boot.user=> (use 'tailrecursion.boot-cljs-repl)
 boot.user=> (start-repl)
 ```
 
