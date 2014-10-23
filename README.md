@@ -15,7 +15,7 @@ In a terminal do:
 
 ```bash
 echo -e '(ns foop)\n(.log js/console "hello world")' > foop.cljs
-boot -d tailrecursion/boot-cljs cljs
+boot -d adzerk/boot-cljs cljs
 ```
 
 The compiled JavaScript will be written to `main.js`.
@@ -25,8 +25,8 @@ The compiled JavaScript will be written to `main.js`.
 Add `boot-cljs` to your `build.boot` dependencies and `require` the namespace:
 
 ```clj
-(set-env! :dependencies '[[tailrecursion/boot-cljs "X.Y.Z" :scope "test"]])
-(require '[tailrecursion.boot-cljs :refer :all])
+(set-env! :dependencies '[[adzerk/boot-cljs "X.Y.Z" :scope "test"]])
+(require '[adzerk.boot-cljs :refer :all])
 ```
 
 You can see the options available on the command line:
@@ -74,9 +74,9 @@ and add the following contents to `build.boot`:
 ```clj
 (set-env!
   :src-paths    #{"src"}
-  :dependencies '[[tailrecursion/boot-cljs "0.0-2371-4" :scope "test"]])
+  :dependencies '[[adzerk/boot-cljs "0.0-X-Y" :scope "test"]])
 
-(require '[tailrecursion.boot-cljs :refer :all])
+(require '[adzerk.boot-cljs :refer :all])
 ```
 
 Then in a terminal:
@@ -87,7 +87,34 @@ boot cljs
 
 The compiled JavaScript file will be `target/main.js`.
 
-### With Preamble and Externs
+### Source Maps
+
+[Source maps][src-maps] are handy for debugging ClojureScript applications.
+You can enable them with the `-s` option:
+
+```bash
+boot cljs -s
+```
+
+> You may need to enable source maps in your browser's developer console
+> settings.
+
+### Compilation Levels
+
+The ClojureScript compiler uses the Google Closure compiler to generate
+optimized JavaScript when desired. There are [three different Closure
+compilation levels][closure-levels]: `whitespace`, `simple`, and
+`advanced`. You may specify the desired compilation level with the `-O`
+option:
+
+```bash
+boot cljs -O advanced
+```
+
+The default level is `whitespace`. Additionally, the `none` level can be
+specified to bypass the Closure compiler.
+
+### Preamble and Externs
 
 Add preamble and extern files to the project, like so:
 
@@ -140,18 +167,17 @@ to `Barp.bazz()` are not mangled by the Closure compiler. Whew!
 
 ### Incremental Builds
 
-You can run boot such that it watches `:src-paths` for changes to source files
-and recompiles the JavaScript file as necessary. This works best with `:none`
-optimizations, because that's the fastest way to compile.
+You can run boot such that it watches source files for changes and recompiles
+the JavaScript file as necessary:
 
 ```bash
-boot watch cljs -O none
+boot watch cljs
 ```
 
 You can also get audible notifications whenever the project is rebuilt:
 
 ```bash
-boot watch speak cljs -O none
+boot watch speak cljs
 ```
 
 > **Note:** The `watch` and `speak` tasks are not part of `boot-cljs`–they're
@@ -159,17 +185,20 @@ boot watch speak cljs -O none
 
 ## Browser REPL
 
-See the [tailrecursion/boot-cljs-repl][boot-cljs-repl] boot task.
+See the [adzerk/boot-cljs-repl][boot-cljs-repl] boot task.
 
 ## License
 
-Copyright © 2014 Micha Niskin and Alan Dipert
+Copyright © 2014 Adzerk
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
 
-[1]: https://github.com/tailrecursion/boot
-[2]: http://clojars.org/tailrecursion/boot-cljs/latest-version.svg?cache=2
-[3]: http://clojars.org/tailrecursion/boot-cljs
-[cider]: https://github.com/clojure-emacs/cider
-[boot-cljs-repl]: https://github.com/tailrecursion/boot-cljs-repl
+[1]:                https://github.com/tailrecursion/boot
+[2]:                http://clojars.org/adzerk/boot-cljs/latest-version.svg?cache=2
+[3]:                http://clojars.org/adzerk/boot-cljs
+[cider]:            https://github.com/clojure-emacs/cider
+[boot-cljs-repl]:   https://github.com/adzerk/boot-cljs-repl
+[src-maps]:         https://developer.chrome.com/devtools/docs/javascript-debugging#source-maps
+[closure-compiler]: https://developers.google.com/closure/compiler/
+[closure-levels]:   https://developers.google.com/closure/compiler/docs/compilation_levels

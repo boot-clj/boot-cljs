@@ -1,4 +1,5 @@
-(ns ^:boot/export-tasks tailrecursion.boot-cljs
+(ns adzerk.boot-cljs
+  {:boot/export-tasks true}
   (:require
    [clojure.java.io :as io]
    [boot.pod        :as pod]
@@ -82,7 +83,7 @@
                       pod/make-pod future)
         {:keys [incs exts libs]}
         (->> (pod/call-in @p
-               `(tailrecursion.boot-cljs.impl/install-dep-files
+               `(adzerk.boot-cljs.impl/install-dep-files
                   ~(core/get-env)
                   ~(.getPath inc-dir)
                   ~(.getPath ext-dir)
@@ -98,7 +99,7 @@
             incs' (->> srcs (core/by-ext [".inc.js"]))]
         (swap! core/*warnings* +
           (-> (pod/call-in @p
-                `(tailrecursion.boot-cljs.impl/compile-cljs
+                `(adzerk.boot-cljs.impl/compile-cljs
                    ~(seq (core/get-env :src-paths))
                    ~(merge-with into cljs-opts {:libs     (concat libs (->res libs'))
                                                 :externs  (concat exts (->res exts'))

@@ -1,4 +1,4 @@
-(ns tailrecursion.boot-cljs.impl
+(ns adzerk.boot-cljs.impl
   (:require
    [clojure.java.io :as io]
    [boot.pod        :as pod]
