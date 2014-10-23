@@ -179,10 +179,10 @@ Then, in `foop.cljs` you may freely use `Barp`, like so:
 (.log js/console "Barp.bazz(1) ==" (.bazz js/Barp 1))
 ```
 
-Compile with advanced optimizations:
+Compile with advanced optimizations and source maps:
 
 ```bash
-boot cljs -O advanced
+boot cljs -sO advanced
 ```
 
 You will see the preamble inserted at the top of `main.js`, and the references
