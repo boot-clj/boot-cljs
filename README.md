@@ -157,7 +157,7 @@ boot watch speak cljs -O none
 > **Note:** The `watch` and `speak` tasks are not part of `boot-cljs`–they're
 > built-in tasks that come with boot.
 
-### ClojureScript REPL
+## Browser REPL
 
 You can also obtain a [browser REPL][boot-cljs-repl] where you may evaluate
 ClojureScript expressions. Here is a sample `build.boot` file to get you started:
