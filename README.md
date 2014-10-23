@@ -177,6 +177,7 @@ This gets the build environment set up with the project dependencies you'll
 need. Then, fire up a REPL and build the project:
 
 ```bash
+# note: cljs-repl task must come before cljs task
 boot watch speak cljs-repl cljs -O none
 ```
 
