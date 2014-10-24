@@ -44,7 +44,7 @@
   (Replace 'out', 'main.js', and 'my-namespace' with your own configuration.)"
 
   [d output-dir NAME     str  "Subdirectory name for GClosure intermediate files."
-   n node-target         bool "Target Node.js for compilation"
+   n node-target         bool "Target Node.js for compilation."
    o output-path PATH    str  "The output js file path relative to docroot."
    O optimizations LEVEL kw   "The optimization level."
    p pretty-print        bool "Pretty-print compiled JS."
