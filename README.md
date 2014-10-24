@@ -41,24 +41,6 @@ or in the REPL:
 boot.user=> (doc cljs)
 ```
 
-### Preamble, Externs, and Lib Files
-
-The `cljs` task figures out what to do with these files by scanning for
-resources on the classpath that have special filename extensions. They should
-be under `hoplon/include/` in the source directory or jar file.
-
-File extensions recognized by the `cljs` task:
-
-* `.inc.js`: JavaScript preamble files–these are prepended to the compiled
-  Javascript in dependency order (i.e. if jar B depends on jar A then entries
-  from A will be added to the JavaScript file such that they'll be evaluated
-  before entries from B).
-* `.lib.js`: GClosure lib files (JavaScript source compatible with the Google
-  Closure compiler).
-* `.ext.js`: [GClosure externs files][closure-externs]–hints to the Closure
-  compiler that prevent it from mangling external names under advanced
-  optimizations.
-
 ### Source Maps
 
 [Source maps][src-maps] are handy for debugging ClojureScript applications.
@@ -108,6 +90,24 @@ boot watch speak cljs
 
 See the [adzerk/boot-cljs-repl][boot-cljs-repl] boot task.
 
+### Preamble, Externs, and Lib Files
+
+The `cljs` task figures out what to do with these files by scanning for
+resources on the classpath that have special filename extensions. They should
+be under `hoplon/include/` in the source directory or jar file.
+
+File extensions recognized by the `cljs` task:
+
+* `.inc.js`: JavaScript preamble files–these are prepended to the compiled
+  Javascript in dependency order (i.e. if jar B depends on jar A then entries
+  from A will be added to the JavaScript file such that they'll be evaluated
+  before entries from B).
+* `.lib.js`: GClosure lib files (JavaScript source compatible with the Google
+  Closure compiler).
+* `.ext.js`: [GClosure externs files][closure-externs]–hints to the Closure
+  compiler that prevent it from mangling external names under advanced
+  optimizations.
+
 ## Examples
 
 Create a new ClojureScript project, like so:
@@ -152,7 +152,7 @@ my-project
             └── barp.inc.js
 ```
 
-Where the contents of `barp.inc.js` are:
+With the contents of `barp.inc.js` (a preamble file):
 
 ```javascript
 (function() {
@@ -164,7 +164,7 @@ Where the contents of `barp.inc.js` are:
 })();
 ```
 
-and `barp.ext.js` are:
+and `barp.ext.js` (the externs file for `barp.inc.js`):
 
 ```javascript
 var Barp = {};
