@@ -2,12 +2,63 @@
   (:require
    [clojure.java.io :as io]
    [boot.pod        :as pod]
+   [boot.file       :as file]
    [cljs.env        :as env]
    [cljs.closure    :as cljs]
-   [cljs.analyzer   :as ana])
+   [cljs.analyzer   :as ana]
+   [net.cgrand.enlive-html :refer :all])
   (:import
    [java.net URL]
    [java.util UUID]))
+
+(def stored-base (atom nil))
+(def base-marker (.toString (UUID/randomUUID)))
+
+(defn get-reset! [atom val]
+  (let [ret @atom] (reset! atom val) ret))
+
+(defn goog-base
+  [html-path output-to output-dir src-path]
+  (when (and src-path (not @stored-base))
+    (let [out-js (io/file output-to)
+          html-f (io/file html-path)
+          parent (memfn getParentFile)
+          canon  (memfn getCanonicalFile)
+          abs?   (.isAbsolute (io/file src-path))
+          src-js (if abs?
+                   (io/file (subs src-path 1))
+                   (io/file (parent html-f) src-path))]
+      (when (= (canon out-js) (canon src-js))
+        (reset! stored-base
+          (let [base (file/up-parents html-f "" (or (parent out-js) "") output-dir "goog" "base.js")]
+            (if (or abs? (not (.startsWith base "/"))) base (subs base 1))))))))
+
+(defn make-base
+  [html-path output-to output-dir]
+  (reset! stored-base nil)
+  (comp (partial goog-base html-path output-to output-dir) :src :attrs))
+
+(defn file->goog
+  [path]
+  (format "goog.require('%s');"
+    (-> path
+      (.replaceAll "\\.cljs$" "")
+      (.replaceAll "[/\\\\]" "."))))
+
+(defn add-script-tags
+  [html-str html-path output-to output-dir cljs-paths]
+  (let [base (make-base html-path output-to output-dir)
+        goog (->> cljs-paths (map file->goog) (apply str))]
+    (-> html-str
+      (sniptest
+        [[:script (pred base)]]
+        (before (html [:script {:type "text/javascript" :src base-marker}])))
+      (.replaceAll base-marker (get-reset! stored-base nil))
+      (sniptest
+        [[:script (pred base)]]
+        (after (html [:script {} goog]))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn jarfile-for
   [url]
@@ -81,10 +132,6 @@
 (defn cljs-env [opts]
   (compare-and-set! stored-env nil (env/default-compiler-env opts))
   @stored-env)
-
-#_(defn init!
-  [opts]
-  (reset! stored-env (env/default-compiler-env opts)))
 
 (defn compile-cljs
   [src-paths {:keys [output-to] :as opts}]

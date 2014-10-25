@@ -4,9 +4,14 @@
    [clojure.java.io :as io]
    [boot.pod        :as pod]
    [boot.core       :as core]
+   [boot.file       :as file]
    [boot.util       :as util]))
 
-(def cljs-deps '[[org.clojure/clojurescript "0.0-2371"]])
+(def ^:private deps
+  '[[enlive "1.1.5"]
+    [org.clojure/clojurescript "0.0-2371"]])
+
+(def ^:private last-cljs (atom {}))
 
 (core/deftask cljs
   "Compile ClojureScript applications.
@@ -15,56 +20,46 @@
 
   Available optimization levels (default 'whitespace'):
 
-    * none         No optimizations.
+    * none         No optimizations. Bypass the Closure compiler completely.
     * whitespace   Remove comments, unnecessary whitespace, and punctuation.
     * simple       Whitespace + local variable and function parameter renaming.
     * advanced     Simple + aggressive renaming, inlining, dead code elimination, etc.
 
-  The output-dir option is useful when using optimizations 'none' or when source
+  The output-dir option is useful when using optimizations=none or when source
   maps are enabled. This option sets the name of the subdirectory (relative to
-  the output-path–the compiled JavaScript file) in which GClosure intermediate
+  the parent of the compiled JavaScript file) in which GClosure intermediate
   files will be written. The default name is 'out'.
 
-  When using optimization level 'none':
-
-    <body>
-      ...
-      <script type='text/javascript' src='out/goog/base.js'></script>
-      <script type='text/javascript' src='main.js'></script>
-      <script type='text/javascript'>goog.require('my.namespace')</script>
-    </body>
-
-  Any other optimization level:
-
-    <body>
-      ...
-      <script type='text/javascript' src='main.js'></script>
-    </body>
-
-  (Replace 'out', 'main.js', and 'my-namespace' with your own configuration.)"
+  The unified option automates the process of adding the necessary <script> tags
+  to HTML files when compiling with optimizations=none. When enabled, any HTML
+  file that loads the output-to JS file via a script tag (as when compiling with
+  optimizations) will have the base.js and goog.require() <script> tags added
+  automatically."
 
   [d output-dir NAME     str  "Subdirectory name for GClosure intermediate files."
    n node-target         bool "Target Node.js for compilation."
-   o output-path PATH    str  "The output js file path relative to docroot."
+   o output-to PATH      str  "The output js file path relative to docroot."
    O optimizations LEVEL kw   "The optimization level."
    p pretty-print        bool "Pretty-print compiled JS."
    s source-map          bool "Create source map for compiled JS."
+   u unified             bool "Add <script> tags to html when optimizations=none."
    W no-warnings         bool "Suppress compiler warnings."]
 
   (let [output-dir  (or output-dir "out")
-        output-path (or output-path "main.js")
+        output-path (or output-to "main.js")
         inc-dir     (core/mksrcdir!)
         lib-dir     (core/mksrcdir!)
         ext-dir     (core/mksrcdir!)
-        tgt-dir     (core/mktmpdir!)
+        tmp-dir     (core/mktmpdir!)
+        tgt-dir     (core/mktgtdir!)
         stage-dir   (core/mktgtdir!)
-        js-out      (io/file tgt-dir output-path)
-        smap        (io/file tgt-dir (str output-path ".map"))
+        js-out      (io/file tmp-dir output-path)
+        smap        (io/file tmp-dir (str output-path ".map"))
         js-parent   (str (.getParent (io/file output-path)))
         keep-out?   (or source-map (= :none optimizations))
         out-dir     (if-not keep-out?
                       (core/mktmpdir!)
-                      (apply io/file tgt-dir (remove empty? [js-parent output-dir])))
+                      (apply io/file tmp-dir (remove empty? [js-parent output-dir])))
         base-opts   {:libs          []
                      :externs       []
                      :preamble      []
@@ -82,7 +77,7 @@
                            (when node-target {:target :nodejs}))
         ->res       (partial map core/resource-path)
         p           (-> (core/get-env)
-                      (update-in [:dependencies] into cljs-deps)
+                      (update-in [:dependencies] into deps)
                       pod/make-pod future)
         {:keys [incs exts libs]}
         (->> (pod/call-in @p
@@ -95,19 +90,32 @@
     (core/with-pre-wrap
       (io/make-parents js-out)
       (util/info "Compiling %s...\n" (.getName js-out))
-      (let [srcs  (core/src-files)
+      (let [srcs  (core/src-files+)
             cljs  (->> srcs (core/by-ext [".cljs"]))
+            lastc (->> cljs (reduce #(assoc %1 %2 (.lastModified %2)) {}))
             exts' (->> srcs (core/by-ext [".ext.js"]))
             libs' (->> srcs (core/by-ext [".lib.js"]))
-            incs' (->> srcs (core/by-ext [".inc.js"]))]
-        (swap! core/*warnings* +
-          (-> (pod/call-in @p
-                `(adzerk.boot-cljs.impl/compile-cljs
-                   ~(seq (core/get-env :src-paths))
-                   ~(merge-with into cljs-opts {:libs     (concat libs (->res libs'))
-                                                :externs  (concat exts (->res exts'))
-                                                :preamble (concat incs (->res (sort incs')))})))
-            (get :warnings 0)))
-        (core/sync! stage-dir tgt-dir)
+            incs' (->> srcs (core/by-ext [".inc.js"]))
+            html  (->> (core/all-files) (core/by-ext [".html"]))]
+        (when (not= @last-cljs (reset! last-cljs lastc))
+          (swap! core/*warnings* +
+            (-> (pod/call-in @p
+                  `(adzerk.boot-cljs.impl/compile-cljs
+                     ~(seq (core/get-env :src-paths))
+                     ~(merge-with into cljs-opts {:libs     (concat libs (->res libs'))
+                                                  :externs  (concat exts (->res exts'))
+                                                  :preamble (concat incs (->res (sort incs')))})))
+              (get :warnings 0))))
+        (when (and unified (= optimizations :none) (seq html))
+          (util/info "Adding <script> tags to html...\n")
+          (let [cljs (->> out-dir file-seq (core/by-ext [".cljs"])
+                       (map #(.getPath (file/relative-to out-dir %))))]
+            (doseq [f html]
+              (let [html-path (core/relative-path f)]
+                (spit (io/file tgt-dir html-path)
+                  (pod/call-in @p
+                    `(adzerk.boot-cljs.impl/add-script-tags
+                       ~(slurp f) ~html-path ~output-path ~output-dir ~cljs)))))))
+        (core/sync! stage-dir tmp-dir tgt-dir)
         (when-not keep-out?
           (doseq [f (concat cljs exts' libs' incs')] (core/consume-file! f)))))))
