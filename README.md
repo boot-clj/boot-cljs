@@ -142,6 +142,8 @@ Create a new ClojureScript project, like so:
 ```
 my-project
 ├── build.boot
+├── html
+│   └── index.html
 └── src
     └── foop.cljs
 ```
@@ -151,6 +153,7 @@ and add the following contents to `build.boot`:
 ```clj
 (set-env!
   :src-paths    #{"src"}
+  :rsc-paths    #{"html"}
   :dependencies '[[adzerk/boot-cljs "0.0-X-Y" :scope "test"]])
 
 (require '[adzerk.boot-cljs :refer :all])
@@ -159,7 +162,7 @@ and add the following contents to `build.boot`:
 Then in a terminal:
 
 ```bash
-boot cljs
+boot cljs -usO none
 ```
 
 The compiled JavaScript file will be `target/main.js`.
@@ -171,6 +174,8 @@ Add preamble and extern files to the project, like so:
 ```
 my-project
 ├── build.boot
+├── html
+│   └── index.html
 └── src
     ├── foop.cljs
     └── hoplon
@@ -209,7 +214,7 @@ Then, in `foop.cljs` you may freely use `Barp`, like so:
 Compile with advanced optimizations and source maps:
 
 ```bash
-boot cljs -sO advanced
+boot cljs -usO advanced
 ```
 
 You will see the preamble inserted at the top of `main.js`, and the references

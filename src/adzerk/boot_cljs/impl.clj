@@ -14,9 +14,6 @@
 (def stored-base (atom nil))
 (def base-marker (.toString (UUID/randomUUID)))
 
-(defn get-reset! [atom val]
-  (let [ret @atom] (reset! atom val) ret))
-
 (defn goog-base
   [html-path output-to output-dir src-path]
   (when (and src-path (not @stored-base))
@@ -46,17 +43,21 @@
       (.replaceAll "[/\\\\]" "."))))
 
 (defn add-script-tags
-  [html-str html-path output-to output-dir cljs-paths]
-  (let [base (make-base html-path output-to output-dir)
-        goog (->> cljs-paths (map file->goog) (apply str))]
+  [html-str html-path output-to output-dir cljs-paths inc-contents]
+  (let [base       (make-base html-path output-to output-dir)
+        goog       (->> cljs-paths (map file->goog) (apply str))
+        selector   (fn [] [[:script (pred base)]])
+        script*    [:script {:type "text/javascript"}]
+        script-js  #(conj script* %)
+        script-src #(update-in script* [1] assoc :src %)
+        reset-base #(do (reset! stored-base nil) %)]
     (-> html-str
-      (sniptest
-        [[:script (pred base)]]
-        (before (html [:script {:type "text/javascript" :src base-marker}])))
-      (.replaceAll base-marker (get-reset! stored-base nil))
-      (sniptest
-        [[:script (pred base)]]
-        (after (html [:script {} goog]))))))
+      (sniptest (selector) (before (html (map script-js inc-contents))))
+      reset-base
+      (sniptest (selector) (before (html (script-src base-marker))))
+      (.replaceAll base-marker @stored-base)
+      reset-base
+      (sniptest (selector) (after (html (script-js goog)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

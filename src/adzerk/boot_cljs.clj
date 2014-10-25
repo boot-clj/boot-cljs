@@ -71,7 +71,7 @@
                      :optimizations (or optimizations :whitespace)}
         ;; src-map: see https://github.com/clojure/clojurescript/wiki/Source-maps
         smap-opts   {:source-map-path js-parent
-                     :source-map      (.getPath smap)}
+                     :source-map      (.getPath (file/relative-to tmp-dir smap))}
         cljs-opts   (merge base-opts
                            (when source-map smap-opts)
                            (when node-target {:target :nodejs}))
@@ -90,32 +90,42 @@
     (core/with-pre-wrap
       (io/make-parents js-out)
       (util/info "Compiling %s...\n" (.getName js-out))
-      (let [srcs  (core/src-files+)
-            cljs  (->> srcs (core/by-ext [".cljs"]))
-            lastc (->> cljs (reduce #(assoc %1 %2 (.lastModified %2)) {}))
-            exts' (->> srcs (core/by-ext [".ext.js"]))
-            libs' (->> srcs (core/by-ext [".lib.js"]))
-            incs' (->> srcs (core/by-ext [".inc.js"]))
-            html  (->> (core/all-files) (core/by-ext [".html"]))]
+      (let [srcs     (core/src-files+)
+            cljs     (->> srcs (core/by-ext [".cljs"]))
+            lastc    (->> cljs (reduce #(assoc %1 %2 (.lastModified %2)) {}))
+            exts'    (->> srcs (core/by-ext [".ext.js"]))
+            libs'    (->> srcs (core/by-ext [".lib.js"]))
+            incs'    (->> srcs (core/by-ext [".inc.js"]))
+            html     (->> (core/all-files) (core/by-ext [".html"]))
+            exts*    (concat exts (->res exts'))
+            libs*    (concat exts (->res libs'))
+            incs*    (concat incs (->res (sort incs')))]
         (when (not= @last-cljs (reset! last-cljs lastc))
           (swap! core/*warnings* +
             (-> (pod/call-in @p
                   `(adzerk.boot-cljs.impl/compile-cljs
                      ~(seq (core/get-env :src-paths))
-                     ~(merge-with into cljs-opts {:libs     (concat libs (->res libs'))
-                                                  :externs  (concat exts (->res exts'))
-                                                  :preamble (concat incs (->res (sort incs')))})))
+                     ~(merge-with into cljs-opts {:libs     libs*
+                                                  :externs  exts*
+                                                  :preamble incs*})))
               (get :warnings 0))))
         (when (and unified (= optimizations :none) (seq html))
           (util/info "Adding <script> tags to html...\n")
           (let [cljs (->> out-dir file-seq (core/by-ext [".cljs"])
                        (map #(.getPath (file/relative-to out-dir %))))]
             (doseq [f html]
-              (let [html-path (core/relative-path f)]
+              (let [content   (slurp f)
+                    html-path (core/relative-path f)]
                 (spit (io/file tgt-dir html-path)
                   (pod/call-in @p
                     `(adzerk.boot-cljs.impl/add-script-tags
-                       ~(slurp f) ~html-path ~output-path ~output-dir ~cljs)))))))
+                       ~content
+                       ~html-path
+                       ~output-path
+                       ~output-dir
+                       ~cljs
+                       ~(->> incs* (map (comp slurp io/resource))))))
+                (core/consume-file! f)))))
         (core/sync! stage-dir tmp-dir tgt-dir)
         (when-not keep-out?
           (doseq [f (concat cljs exts' libs' incs')] (core/consume-file! f)))))))
