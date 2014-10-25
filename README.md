@@ -41,18 +41,6 @@ or in the REPL:
 boot.user=> (doc cljs)
 ```
 
-### Source Maps
-
-[Source maps][src-maps] are handy for debugging ClojureScript applications.
-You can enable them with the `-s` option:
-
-```bash
-boot cljs -s
-```
-
-> You may need to enable source maps in your browser's developer console
-> settings.
-
 ### Compilation Levels
 
 The ClojureScript compiler uses the Google Closure compiler to generate
@@ -67,6 +55,43 @@ boot cljs -O advanced
 
 The default level is `whitespace`. Additionally, the `none` level can be
 specified to bypass the Closure compiler.
+
+### Unified HTML
+
+The HTML file will always need to have a `<script>` tag to load the compiled
+JavaScript. However, when the Closure compiler is bypassed (optimizations `none`)
+two other `<script>` tags must be added to the HTML:
+
+```html
+<!-- compiling with optimizations!=none -->
+<script type='text/javascript' src='main.js'></script>
+```
+
+or
+
+```html
+<!-- compiling with optimizations=none -->
+<script type='text/javascript' src='out/goog/base.js'></script>
+<script type='text/javascript' src='main.js'></script>
+<script type='text/javascript'>goog.require('my.namespace');</script>
+```
+
+The `-u` option may be used to automatically add the extra `<script>` tags when
+compiling with `none` optimizations, so you don't need to have different HTML
+for different compilation levels.
+
+### Source Maps
+
+[Source maps][src-maps] associate locations in the compiled JavaScript file with
+the corresponding line and column in the ClojureScript source files. When source
+maps are enabled (the `-s` option) the browser developer tools will refer to
+locations in the ClojureScript source rather than the compiled JavaScript.
+
+```bash
+boot cljs -s
+```
+
+> You may need to enable source maps in your browser's developer tools settings.
 
 ### Incremental Builds
 
@@ -102,8 +127,10 @@ File extensions recognized by the `cljs` task:
   Javascript in dependency order (i.e. if jar B depends on jar A then entries
   from A will be added to the JavaScript file such that they'll be evaluated
   before entries from B).
+
 * `.lib.js`: GClosure lib files (JavaScript source compatible with the Google
   Closure compiler).
+
 * `.ext.js`: [GClosure externs files][closure-externs]–hints to the Closure
   compiler that prevent it from mangling external names under advanced
   optimizations.
