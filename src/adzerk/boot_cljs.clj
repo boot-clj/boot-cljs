@@ -2,6 +2,7 @@
   {:boot/export-tasks true}
   (:require
    [clojure.java.io :as io]
+   [clojure.set     :as set]
    [boot.pod        :as pod]
    [boot.core       :as core]
    [boot.file       :as file]
@@ -12,6 +13,7 @@
     [org.clojure/clojurescript "0.0-2371"]])
 
 (def ^:private last-cljs (atom {}))
+(def ^:private last-html (atom #{}))
 
 (core/deftask cljs
   "Compile ClojureScript applications.
@@ -51,7 +53,7 @@
         lib-dir     (core/mksrcdir!)
         ext-dir     (core/mksrcdir!)
         tmp-dir     (core/mktmpdir!)
-        tgt-dir     (core/mktgtdir!)
+        html-dir    (core/mktmpdir!)
         stage-dir   (core/mktgtdir!)
         js-out      (io/file tmp-dir output-path)
         smap        (io/file tmp-dir (str output-path ".map"))
@@ -89,7 +91,6 @@
           (reduce-kv #(assoc %1 %2 (->res %3)) {}))]
     (core/with-pre-wrap
       (io/make-parents js-out)
-      (util/info "Compiling %s...\n" (.getName js-out))
       (let [srcs     (core/src-files+)
             cljs     (->> srcs (core/by-ext [".cljs"]))
             lastc    (->> cljs (reduce #(assoc %1 %2 (.lastModified %2)) {}))
@@ -99,33 +100,46 @@
             html     (->> (core/all-files) (core/by-ext [".html"]))
             exts*    (concat exts (->res exts'))
             libs*    (concat exts (->res libs'))
-            incs*    (concat incs (->res (sort incs')))]
-        (when (not= @last-cljs (reset! last-cljs lastc))
+            incs*    (concat incs (->res (sort incs')))
+            dirty-c? (not= @last-cljs (reset! last-cljs lastc))
+            lasth    (->> html (reduce #(conj %1 [%2 (.lastModified %2)]) #{}))
+            dirty-h  (set (map first (set/difference lasth @last-html)))
+            remov-h  (set/difference (set (map first @last-html)) (set (map first lasth)))
+            notify-h (delay (util/info "Adding <script> tags to html...\n"))]
+        (reset! last-html lasth)
+        (when dirty-c?
+          (util/info "Compiling %s...\n" (.getName js-out))
           (swap! core/*warnings* +
             (-> (pod/call-in @p
                   `(adzerk.boot-cljs.impl/compile-cljs
                      ~(seq (core/get-env :src-paths))
-                     ~(merge-with into cljs-opts {:libs     libs*
-                                                  :externs  exts*
-                                                  :preamble incs*})))
+                     ~(merge-with into
+                        cljs-opts {:libs     libs*
+                                   :externs  exts*
+                                   :preamble incs*})))
               (get :warnings 0))))
         (when (and unified (= optimizations :none) (seq html))
-          (util/info "Adding <script> tags to html...\n")
           (let [cljs (->> out-dir file-seq (core/by-ext [".cljs"])
                        (map #(.getPath (file/relative-to out-dir %))))]
             (doseq [f html]
               (let [content   (slurp f)
-                    html-path (core/relative-path f)]
-                (spit (io/file tgt-dir html-path)
-                  (pod/call-in @p
-                    `(adzerk.boot-cljs.impl/add-script-tags
-                       ~content
-                       ~html-path
-                       ~output-path
-                       ~output-dir
-                       ~cljs
-                       ~(->> incs* (map (comp slurp io/resource))))))
+                    html-path (core/relative-path f)
+                    out-file  (io/file html-dir html-path)]
+                (cond
+                  (contains? dirty-h f)
+                  (do @notify-h
+                      (io/make-parents out-file)
+                      (spit out-file
+                        (pod/call-in @p
+                          `(adzerk.boot-cljs.impl/add-script-tags
+                             ~content
+                             ~html-path
+                             ~output-path
+                             ~output-dir
+                             ~cljs
+                             ~(->> incs* (map (comp slurp io/resource)))))))
+                  (contains? remov-h f) (io/delete-file out-file true))
                 (core/consume-file! f)))))
-        (core/sync! stage-dir tmp-dir tgt-dir)
+        (core/sync! stage-dir tmp-dir html-dir)
         (when-not keep-out?
           (doseq [f (concat cljs exts' libs' incs')] (core/consume-file! f)))))))
