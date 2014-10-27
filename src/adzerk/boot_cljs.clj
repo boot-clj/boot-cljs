@@ -125,20 +125,19 @@
               (let [content   (slurp f)
                     html-path (core/relative-path f)
                     out-file  (io/file html-dir html-path)]
-                (cond
-                  (contains? dirty-h f)
-                  (do @notify-h
-                      (io/make-parents out-file)
-                      (spit out-file
-                        (pod/call-in @p
-                          `(adzerk.boot-cljs.impl/add-script-tags
-                             ~content
-                             ~html-path
-                             ~output-path
-                             ~output-dir
-                             ~cljs
-                             ~(->> incs* (map (comp slurp io/resource)))))))
-                  (contains? remov-h f) (io/delete-file out-file true))
+                (when (or dirty-c? (contains? dirty-h f))
+                  @notify-h
+                  (io/make-parents out-file)
+                  (spit out-file
+                    (pod/call-in @p
+                      `(adzerk.boot-cljs.impl/add-script-tags
+                         ~content
+                         ~html-path
+                         ~output-path
+                         ~output-dir
+                         ~cljs
+                         ~(->> incs* (map (comp slurp io/resource)))))))
+                (when (contains? remov-h f) (io/delete-file out-file true))
                 (core/consume-file! f)))))
         (core/sync! stage-dir tmp-dir html-dir)
         (when-not keep-out?
