@@ -59,18 +59,18 @@ specified to bypass the Closure compiler.
 ### Unified HTML
 
 The HTML file will always need to have a `<script>` tag to load the compiled
-JavaScript. However, when the Closure compiler is bypassed (optimizations `none`)
-two other `<script>` tags must be added to the HTML:
+JavaScript:
 
 ```html
-<!-- compiling with optimizations!=none -->
+<!-- compiling with optimizations != none -->
 <script type='text/javascript' src='main.js'></script>
 ```
 
-or
+However, when the Closure compiler is bypassed (optimizations `none`)
+two other `<script>` tags must be added to the HTML:
 
 ```html
-<!-- compiling with optimizations=none -->
+<!-- compiling with optimizations == none -->
 <script type='text/javascript' src='out/goog/base.js'></script>
 <script type='text/javascript' src='main.js'></script>
 <script type='text/javascript'>goog.require('my.namespace');</script>
