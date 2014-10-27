@@ -119,8 +119,7 @@
                                    :preamble incs*})))
               (get :warnings 0))))
         (when (and unified (= optimizations :none) (seq html))
-          (let [cljs (->> out-dir file-seq (core/by-ext [".cljs"])
-                       (map #(.getPath (file/relative-to out-dir %))))]
+          (let [cljs (map core/relative-path cljs)]
             (doseq [f html]
               (let [content   (slurp f)
                     html-path (core/relative-path f)
