@@ -58,7 +58,8 @@
         js-out      (io/file tmp-dir output-path)
         smap        (io/file tmp-dir (str output-path ".map"))
         js-parent   (str (.getParent (io/file output-path)))
-        keep-out?   (or source-map (= :none optimizations))
+        none?       (= :none optimizations)
+        keep-out?   (or source-map none?)
         out-dir     (if-not keep-out?
                       (core/mktmpdir!)
                       (apply io/file tmp-dir (remove empty? [js-parent output-dir])))
@@ -72,8 +73,8 @@
                      :pretty-print  (boolean pretty-print)
                      :optimizations (or optimizations :whitespace)}
         ;; src-map: see https://github.com/clojure/clojurescript/wiki/Source-maps
-        smap-opts   {:source-map-path js-parent
-                     :source-map      (.getPath (file/relative-to tmp-dir smap))}
+        smap-opts   {:source-map-path (if none? js-parent output-dir)
+                     :source-map      (.getPath (if none? (file/relative-to tmp-dir smap) smap))}
         cljs-opts   (merge base-opts
                            (when source-map smap-opts)
                            (when node-target {:target :nodejs}))
@@ -118,7 +119,7 @@
                                    :externs  exts*
                                    :preamble incs*})))
               (get :warnings 0))))
-        (when (and unified (= optimizations :none) (seq html))
+        (when (and unified none? (seq html))
           (let [cljs (map core/relative-path cljs)]
             (doseq [f html]
               (let [content   (slurp f)
