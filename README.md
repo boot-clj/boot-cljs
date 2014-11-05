@@ -2,7 +2,7 @@
 
 [![Clojars Project][2]][3]
 
-Boot task to compile ClojureScript applications.
+[Boot](https://github.com/boot-clj/boot) task to compile ClojureScript applications.
 
 * Provides the `cljs` task–compiles ClojureScript to JavaScript.
 * Provides a mechanism by which JS preamble, and Google Closure libs and externs
