@@ -137,7 +137,7 @@
                          ~output-dir
                          ~cljs
                          ~(->> incs* (map (comp slurp io/resource)))))))
-                ;; FIXME (when (contains? remov-h f) (io/delete-file out-file true))
+                (when (contains? remov-h f) (io/delete-file out-file true))
                 (core/consume-file! f)))))
         (core/sync! stage-dir tmp-dir html-dir)
         (when-not keep-out?
