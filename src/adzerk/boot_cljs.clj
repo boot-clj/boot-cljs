@@ -136,7 +136,8 @@
                          ~output-path
                          ~output-dir
                          ~cljs
-                         ~(->> incs* (map (comp slurp io/resource)))))))
+                         ~(->> incs* (map (comp slurp io/resource))))))
+                  (.setLastModified out-file (.lastModified f)))
                 (when (contains? remov-h f) (io/delete-file out-file true))
                 (core/consume-file! f)))))
         (core/sync! stage-dir tmp-dir html-dir)
