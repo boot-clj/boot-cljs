@@ -14,6 +14,16 @@
 (def stored-base (atom nil))
 (def base-marker (.toString (UUID/randomUUID)))
 
+(defn rm-updirs
+  [path]
+  (let [segs (->> path file/parent-seq reverse (map (memfn getName)))]
+    (loop [ret [] [x & xs] segs]
+      (if-not x
+        (.getPath (apply io/file ret))
+        (if (= x "..")
+          (recur ret (rest xs))
+          (recur (conj ret x) xs))))))
+
 (defn goog-base
   [html-path output-to output-dir src-path]
   (when (and src-path (not @stored-base))
@@ -27,7 +37,7 @@
                    (io/file (parent html-f) src-path))]
       (when (= (canon out-js) (canon src-js))
         (reset! stored-base
-          (let [base (file/up-parents html-f "" (or (parent out-js) "") output-dir "goog" "base.js")]
+          (let [base (rm-updirs (file/up-parents html-f "" (or (parent out-js) "") output-dir "goog" "base.js"))]
             (if (or abs? (not (.startsWith base "/"))) base (subs base 1))))))))
 
 (defn make-base
