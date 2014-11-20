@@ -9,6 +9,18 @@
   files can be included in Maven jar dependencies or from the project source
   directories.
 
+## Try It
+
+In a terminal do:
+
+```bash
+mkdir src
+echo -e '(ns foop)\n(.log js/console "hello world")' > src/foop.cljs
+boot -s src -d adzerk/boot-cljs cljs
+```
+
+The compiled JavaScript will be written to `target/main.js`.
+
 ## Usage
 
 Add `boot-cljs` to your `build.boot` dependencies and `require` the namespace:
