@@ -221,6 +221,10 @@ boot cljs -usO advanced
 You will see the preamble inserted at the top of `main.js`, and the references
 to `Barp.bazz()` are not mangled by the Closure compiler. Whew!
 
+### Further Reading
+For an example project with a local web server, CLJS REPL, and live-reload, check out [boot-cljs-example](https://github.com/adzerk/boot-cljs-example)!
+
+
 ## License
 
 Copyright © 2014 Adzerk
