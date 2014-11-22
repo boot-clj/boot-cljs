@@ -14,11 +14,12 @@
 In a terminal do:
 
 ```bash
-echo -e '(ns foop)\n(.log js/console "hello world")' > foop.cljs
-boot -d adzerk/boot-cljs cljs
+mkdir src
+echo -e '(ns foop)\n(.log js/console "hello world")' > src/foop.cljs
+boot -s src -d adzerk/boot-cljs cljs
 ```
 
-The compiled JavaScript will be written to `main.js`.
+The compiled JavaScript will be written to `target/main.js`.
 
 ## Usage
 
@@ -219,6 +220,10 @@ boot cljs -usO advanced
 
 You will see the preamble inserted at the top of `main.js`, and the references
 to `Barp.bazz()` are not mangled by the Closure compiler. Whew!
+
+### Further Reading
+For an example project with a local web server, CLJS REPL, and live-reload, check out [boot-cljs-example](https://github.com/adzerk/boot-cljs-example)!
+
 
 ## License
 
