@@ -8,27 +8,24 @@
    [cljs.analyzer   :as ana]
    [net.cgrand.enlive-html :refer :all])
   (:import
-   [java.net URL]
+   [java.net URL URI]
    [java.util UUID]))
 
 (def stored-base (atom nil))
 (def base-marker (.toString (UUID/randomUUID)))
 
+(defn resolve-relpath
+  [base path]
+  (-> base URI. (.resolve path) .getPath))
+
 (defn goog-base
   [html-path output-to output-dir src-path]
   (when (and src-path (not @stored-base))
-    (let [out-js (io/file output-to)
-          html-f (io/file html-path)
-          parent (memfn getParentFile)
-          canon  (memfn getCanonicalFile)
-          abs?   (.isAbsolute (io/file src-path))
-          src-js (if abs?
-                   (io/file (subs src-path 1))
-                   (io/file (parent html-f) src-path))]
-      (when (= (canon out-js) (canon src-js))
-        (reset! stored-base
-          (let [base (file/up-parents html-f "" (or (parent out-js) "") output-dir "goog" "base.js")]
-            (if (or abs? (not (.startsWith base "/"))) base (subs base 1))))))))
+    (when (= output-to (resolve-relpath html-path src-path))
+      (reset! stored-base
+              (let [html-f (io/file html-path)
+                    js-dir (-> output-to io/file .getParentFile)]
+                (file/up-parents html-f js-dir output-dir "goog" "base.js"))))))
 
 (defn make-base
   [html-path output-to output-dir]
@@ -50,14 +47,15 @@
         script*    [:script {:type "text/javascript"}]
         script-js  #(conj script* %)
         script-src #(update-in script* [1] assoc :src %)
-        reset-base #(do (reset! stored-base nil) %)]
-    (-> html-str
-      (sniptest (selector) (before (html (map script-js inc-contents))))
-      reset-base
-      (sniptest (selector) (before (html (script-src base-marker))))
-      (.replaceAll base-marker @stored-base)
-      reset-base
-      (sniptest (selector) (after (html (script-js goog)))))))
+        reset-base #(do (reset! stored-base nil) %)
+        tagged     (-> html-str
+                       (sniptest (selector) (before (html (map script-js inc-contents))))
+                       reset-base
+                       (sniptest (selector) (before (html (script-src base-marker))))
+                       (.replaceAll base-marker @stored-base)
+                       reset-base
+                       (sniptest (selector) (after (html (script-js goog)))))]
+    (if @stored-base tagged html-str)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

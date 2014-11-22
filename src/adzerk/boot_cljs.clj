@@ -126,18 +126,20 @@
                     html-path (core/relative-path f)
                     out-file  (io/file html-dir html-path)]
                 (when (or dirty-c? (contains? dirty-h f))
-                  @notify-h
-                  (io/make-parents out-file)
-                  (spit out-file
-                    (pod/call-in @p
-                      `(adzerk.boot-cljs.impl/add-script-tags
-                         ~content
-                         ~html-path
-                         ~output-path
-                         ~output-dir
-                         ~cljs
-                         ~(->> incs* (map (comp slurp io/resource))))))
-                  (.setLastModified out-file (.lastModified f)))
+                  (let [tagged (pod/call-in
+                                 @p
+                                 `(adzerk.boot-cljs.impl/add-script-tags
+                                    ~content
+                                    ~html-path
+                                    ~output-path
+                                    ~output-dir
+                                    ~cljs
+                                    ~(->> incs* (map (comp slurp io/resource)))))]
+                    (when-not (= tagged content)
+                      (util/info "Adding <script> tags to %s...\n" (.getName f)))
+                    (io/make-parents out-file)
+                    (spit out-file tagged)
+                    (.setLastModified out-file (.lastModified f))))
                 (when (contains? remov-h f) (io/delete-file out-file true))
                 (core/consume-file! f)))))
         (core/sync! stage-dir tmp-dir html-dir)
