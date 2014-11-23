@@ -18,14 +18,30 @@
   [base path]
   (-> base URI. (.resolve path) .getPath))
 
+(defn shared-root
+  [a b]
+  (->> (for [a' (-> a io/file file/parent-seq)
+             b' (-> b io/file file/parent-seq)]
+         (when (= a' b') (.getPath a')))
+       (keep identity) first str))
+
+(defn path-segs
+  [path]
+  (->> path io/file file/parent-seq (map  (memfn getName)) reverse))
+
 (defn goog-base
   [html-path output-to output-dir src-path]
   (when (and src-path (not @stored-base))
     (when (= output-to (resolve-relpath html-path src-path))
-      (reset! stored-base
-              (let [html-f (io/file html-path)
-                    js-dir (-> output-to io/file .getParentFile)]
-                (file/up-parents html-f js-dir output-dir "goog" "base.js"))))))
+      (reset!
+        stored-base
+        (let [root    (shared-root html-path output-to)
+              js-dir  (str (.getParent (io/file output-to)))
+              js-base (.getPath (file/relative-to (io/file root) (io/file js-dir)))
+              segs    (->> [output-dir "goog" "base.js"]
+                           (concat (path-segs js-base))
+                           (remove empty?))]
+          (apply file/up-parents (io/file html-path) (io/file root) segs))))))
 
 (defn make-base
   [html-path output-to output-dir]
