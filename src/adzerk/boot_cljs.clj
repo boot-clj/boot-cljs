@@ -9,11 +9,7 @@
    [boot.util       :as util]))
 
 (def ^:private deps
-  '[[enlive "1.1.5"]
-    [org.clojure/clojurescript "0.0-2371"]])
-
-(def ^:private last-cljs (atom {}))
-(def ^:private last-html (atom #{}))
+  '[[org.clojure/clojurescript "0.0-2411"]])
 
 (core/deftask cljs
   "Compile ClojureScript applications.
@@ -44,24 +40,18 @@
    O optimizations LEVEL kw   "The optimization level."
    p pretty-print        bool "Pretty-print compiled JS."
    s source-map          bool "Create source map for compiled JS."
-   u unified             bool "Add <script> tags to html when optimizations=none."
    W no-warnings         bool "Suppress compiler warnings."]
 
   (let [output-dir  (or output-dir "out")
         output-path (or output-to "main.js")
-        inc-dir     (core/mksrcdir!)
-        lib-dir     (core/mksrcdir!)
-        ext-dir     (core/mksrcdir!)
-        tmp-dir     (core/mktmpdir!)
-        html-dir    (core/mktmpdir!)
-        stage-dir   (core/mktgtdir!)
+        tmp-dir     (core/temp-dir!)
         js-out      (io/file tmp-dir output-path)
         smap        (io/file tmp-dir (str output-path ".map"))
         js-parent   (str (.getParent (io/file output-path)))
         none?       (= :none optimizations)
         keep-out?   (or source-map none?)
         out-dir     (if-not keep-out?
-                      (core/mktmpdir!)
+                      (core/temp-dir!)
                       (apply io/file tmp-dir (remove empty? [js-parent output-dir])))
         base-opts   {:libs          []
                      :externs       []
@@ -78,70 +68,19 @@
         cljs-opts   (merge base-opts
                            (when source-map smap-opts)
                            (when node-target {:target :nodejs}))
-        ->res       (partial map core/resource-path)
-        p           (-> (core/get-env)
-                      (update-in [:dependencies] into deps)
-                      pod/make-pod future)
-        {:keys [incs exts libs]}
-        (->> (pod/call-in @p
-               `(adzerk.boot-cljs.impl/install-dep-files
-                  ~(core/get-env)
-                  ~(.getPath inc-dir)
-                  ~(.getPath ext-dir)
-                  ~(.getPath lib-dir)))
-          (reduce-kv #(assoc %1 %2 (->res %3)) {}))]
-    (core/with-pre-wrap
+        pod-env     (-> (core/get-env) (update-in [:dependencies] into deps))
+        p           (pod/pod-pool 2 pod-env)]
+    (core/with-pre-wrap fileset
       (io/make-parents js-out)
-      (let [srcs     (core/src-files+)
-            cljs     (->> srcs (core/by-ext [".cljs"]))
-            lastc    (->> cljs (reduce #(assoc %1 %2 (.lastModified %2)) {}))
-            exts'    (->> srcs (core/by-ext [".ext.js"]))
-            libs'    (->> srcs (core/by-ext [".lib.js"]))
-            incs'    (->> srcs (core/by-ext [".inc.js"]))
-            html     (->> (core/all-files) (core/by-ext [".html"]))
-            exts*    (concat exts (->res exts'))
-            libs*    (concat exts (->res libs'))
-            incs*    (concat incs (->res (sort incs')))
-            dirty-c? (not= @last-cljs (reset! last-cljs lastc))
-            lasth    (->> html (reduce #(conj %1 [%2 (.lastModified %2)]) #{}))
-            dirty-h  (set (map first (set/difference lasth @last-html)))
-            remov-h  (set/difference (set (map first @last-html)) (set (map first lasth)))
-            notify-h (delay (util/info "Adding <script> tags to html...\n"))]
-        (reset! last-html lasth)
-        (when dirty-c?
-          (util/info "Compiling %s...\n" (.getName js-out))
-          (swap! core/*warnings* +
-            (-> (pod/call-in @p
-                  `(adzerk.boot-cljs.impl/compile-cljs
-                     ~(seq (core/get-env :src-paths))
-                     ~(merge-with into
-                        cljs-opts {:libs     libs*
-                                   :externs  exts*
-                                   :preamble incs*})))
-              (get :warnings 0))))
-        (when (and unified none? (seq html))
-          (let [cljs (map core/relative-path cljs)]
-            (doseq [f html]
-              (let [content   (slurp f)
-                    html-path (core/relative-path f)
-                    out-file  (io/file html-dir html-path)]
-                (when (or dirty-c? (contains? dirty-h f))
-                  (let [tagged (pod/call-in
-                                 @p
-                                 `(adzerk.boot-cljs.impl/add-script-tags
-                                    ~content
-                                    ~html-path
-                                    ~output-path
-                                    ~output-dir
-                                    ~cljs
-                                    ~(->> incs* (map (comp slurp io/resource)))))]
-                    (when-not (= tagged content)
-                      (util/info "Adding <script> tags to %s...\n" (.getName f)))
-                    (io/make-parents out-file)
-                    (spit out-file tagged)
-                    (.setLastModified out-file (.lastModified f))))
-                (when (contains? remov-h f) (io/delete-file out-file true))
-                (core/consume-file! f)))))
-        (core/sync! stage-dir tmp-dir html-dir)
-        (when-not keep-out?
-          (doseq [f (concat cljs exts' libs' incs')] (core/consume-file! f)))))))
+      (let [srcs   (core/input-files fileset)
+            ->path (comp (memfn getPath) core/tmpfile)
+            exts   (->> srcs (core/by-ext [".ext.js"]) (map ->path))
+            libs   (->> srcs (core/by-ext [".lib.js"]) (map ->path))]
+        (util/info "Compiling %s...\n" (.getName js-out))
+        (swap! core/*warnings* +
+               (-> (pod/with-call-in (p)
+                     (adzerk.boot-cljs.impl/compile-cljs
+                       ~(map (memfn getPath) (core/input-dirs fileset))
+                       ~(merge-with into cljs-opts {:libs libs :externs exts})))
+                   (get :warnings 0)))
+        (-> fileset (core/add-asset tmp-dir) core/commit!)))))
