@@ -11,6 +11,37 @@
 (def ^:private deps
   '[[org.clojure/clojurescript "0.0-2411"]])
 
+(def cljsc-output-filename
+  "df3ee125-976d-4f56-b7b5-6dc12c35fd18.js")
+
+(defn output-path-for [unified-mode f]
+  (if-not unified-mode
+    f
+    (if-let [parent (.getParent (io/file f))]
+      (io/file parent cljsc-output-filename) 
+      (io/file cljsc-output-filename))))
+
+(defn file->goog
+  [path]
+  (format "goog.require('%s');"
+    (-> path
+      (.replaceAll "\\.cljs$" "")
+      (.replaceAll "[/\\\\]" "."))))
+
+(defn write-src [inc]
+  (format "document.write(\"<script src='%s'></script>\");\n" inc))
+
+(defn write-body [code]
+  (format "document.write(\"<script>%s</script>\");\n" code))
+
+(defn write-shim! [f incs cljs output-path output-dir]
+  (spit f "// boot-cljs shim\n")
+  (doseq [inc incs]
+    (spit f (write-src inc) :append true))
+  (spit f (write-src (.getPath (io/file output-dir "goog" "base.js"))) :append true)
+  (spit f (write-src output-path) :append true)
+  (spit f (write-body (apply str (map file->goog cljs))) :append true))
+
 (core/deftask cljs
   "Compile ClojureScript applications.
 
@@ -40,12 +71,17 @@
    O optimizations LEVEL kw   "The optimization level."
    p pretty-print        bool "Pretty-print compiled JS."
    s source-map          bool "Create source map for compiled JS."
-   W no-warnings         bool "Suppress compiler warnings."]
-
-  (let [output-dir  (or output-dir "out")
-        output-path (or output-to "main.js")
+   W no-warnings         bool "Suppress compiler warnings."
+   u unified-mode        bool "Unified mode"]
+  (if (and unified-mode (not= optimizations :none))
+    (util/warn "unified-mode on; setting optimizations to :none\n"))
+  (let [optimizations (if unified-mode :none optimizations)
+        output-dir  (or output-dir "out")
+        output-path* (or output-to "main.js")
+        output-path (output-path-for unified-mode output-path*)
         tmp-dir     (core/temp-dir!)
         js-out      (io/file tmp-dir output-path)
+        shim        (io/file tmp-dir output-path*)
         smap        (io/file tmp-dir (str output-path ".map"))
         js-parent   (str (.getParent (io/file output-path)))
         none?       (= :none optimizations)
@@ -74,13 +110,18 @@
       (io/make-parents js-out)
       (let [srcs   (core/input-files fileset)
             ->path (comp (memfn getPath) core/tmpfile)
-            exts   (->> srcs (core/by-ext [".ext.js"]) (map ->path))
-            libs   (->> srcs (core/by-ext [".lib.js"]) (map ->path))]
+            incs   (->> srcs (core/by-ext [".inc.js"]) (mapv core/tmppath) sort)
+            cljs   (->> srcs (core/by-ext [".cljs"])   (mapv core/tmppath))
+            exts   (->> srcs (core/by-ext [".ext.js"]) (mapv ->path))
+            libs   (->> srcs (core/by-ext [".lib.js"]) (mapv ->path))]
         (util/info "Compiling %s...\n" (.getName js-out))
         (swap! core/*warnings* +
-               (-> (pod/with-call-in (p)
-                     (adzerk.boot-cljs.impl/compile-cljs
-                       ~(map (memfn getPath) (core/input-dirs fileset))
-                       ~(merge-with into cljs-opts {:libs libs :externs exts})))
-                   (get :warnings 0)))
+               (let [preamble (if none? [] incs)]
+                 (-> (pod/with-call-in (p)
+                       (adzerk.boot-cljs.impl/compile-cljs
+                        ~(map (memfn getPath) (core/input-dirs fileset))
+                        ~(merge-with into cljs-opts {:libs libs :externs exts :preamble preamble})))
+                     (get :warnings 0))))
+        (when unified-mode
+          (write-shim! shim incs cljs output-path output-dir))
         (-> fileset (core/add-asset tmp-dir) core/commit!)))))
