@@ -69,7 +69,7 @@
                            (when source-map smap-opts)
                            (when node-target {:target :nodejs}))
         pod-env     (-> (core/get-env) (update-in [:dependencies] into deps))
-        p           (pod/pod-pool 2 pod-env)]
+        p           (pod/pod-pool pod-env)]
     (core/with-pre-wrap fileset
       (io/make-parents js-out)
       (let [srcs   (core/input-files fileset)
