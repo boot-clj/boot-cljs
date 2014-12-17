@@ -12,7 +12,7 @@
   '[[org.clojure/clojurescript "0.0-2411"]])
 
 (def cljsc-output-filename
-  "df3ee125-976d-4f56-b7b5-6dc12c35fd18.js")
+  "cljsc-output-c4afbd925.js")
 
 (defn output-path-for [unified-mode f]
   (if-not unified-mode
