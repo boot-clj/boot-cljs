@@ -124,4 +124,4 @@
                      (get :warnings 0))))
         (when unified-mode
           (write-shim! shim incs cljs output-path output-dir))
-        (-> fileset (core/add-asset tmp-dir) core/commit!)))))
+        (-> fileset (core/add-resource tmp-dir) core/commit!)))))
