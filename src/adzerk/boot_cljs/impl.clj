@@ -1,14 +1,15 @@
 (ns adzerk.boot-cljs.impl
   (:require
-   [clojure.java.io :as io]
-   [boot.pod        :as pod]
-   [boot.file       :as file]
-   [cljs.env        :as env]
-   [cljs.closure    :as cljs]
-   [cljs.analyzer   :as ana])
+    [clojure.java.io :as io]
+    [boot.pod        :as pod]
+    [boot.file       :as file]
+    [cljs.env        :as env]
+    [cljs.closure    :as cljs]
+    [cljs.analyzer   :as ana])
   (:import
-   [java.net URL URI]
-   [java.util UUID]))
+    [cljs.closure JavaScriptFile]
+    [java.net URL URI]
+    [java.util UUID]))
 
 (defrecord CljsSourcePaths [paths]
   cljs/Compilable

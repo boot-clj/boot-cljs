@@ -1,46 +1,127 @@
 (ns adzerk.boot-cljs
   {:boot/export-tasks true}
   (:require
-   [clojure.java.io :as io]
-   [clojure.set     :as set]
-   [boot.pod        :as pod]
-   [boot.core       :as core]
-   [boot.file       :as file]
-   [boot.util       :as util]))
+   [clojure.java.io    :as io]
+   [boot.from.backtick :as bt]
+   [clojure.set        :as set]
+   [clojure.string     :as string]
+   [boot.pod           :as pod]
+   [boot.core          :as core]
+   [boot.file          :as file]
+   [boot.util          :as util]))
 
 (def ^:private deps
-  '[[org.clojure/clojurescript "0.0-2411"]])
+  '[[org.clojure/clojurescript "0.0-2498"]])
 
-(def cljsc-output-filename
-  "cljsc-output-c4afbd925.js")
+(defn- replace-path
+  [path name]
+  (if-let [p (.getParent (io/file path))]
+    (io/file p name)
+    (io/file name)))
 
-(defn output-path-for [unified-mode f]
-  (if-not unified-mode
-    f
-    (if-let [parent (.getParent (io/file f))]
-      (io/file parent cljsc-output-filename) 
-      (io/file cljsc-output-filename))))
+(defn- output-path-for
+  [f]
+  (let [fname (str "boot-cljs-" (.getName (io/file f)))]
+    (replace-path f fname)))
 
-(defn file->goog
+(defn- path->js
   [path]
-  (format "goog.require('%s');"
-    (-> path
+  (-> path
       (.replaceAll "\\.cljs$" "")
-      (.replaceAll "[/\\\\]" "."))))
+      (.replaceAll "[/\\\\]" ".")))
 
-(defn write-src [inc]
+(defn- path->ns
+  [path]
+  (-> (path->js path) (.replaceAll "_" "-")))
+
+(defn- file->goog
+  [path]
+  (format "goog.require('%s');" (path->js path)))
+
+(defn- write-src
+  [inc]
   (format "document.write(\"<script src='%s'></script>\");\n" inc))
 
-(defn write-body [code]
+(defn- write-body
+  [code]
   (format "document.write(\"<script>%s</script>\");\n" code))
 
-(defn write-shim! [f incs cljs output-path output-dir]
-  (spit f "// boot-cljs shim\n")
-  (doseq [inc incs]
-    (spit f (write-src inc) :append true))
-  (spit f (write-src (.getPath (io/file output-dir "goog" "base.js"))) :append true)
-  (spit f (write-src output-path) :append true)
-  (spit f (write-body (apply str (map file->goog cljs))) :append true))
+(defn- write-shim!
+  [f shim-path incs cljs output-path output-dir]
+  (let [output-dir (replace-path shim-path output-dir)]
+    (spit f "// boot-cljs shim\n")
+    (doseq [inc incs]
+      (spit f (write-src inc) :append true))
+    (spit f (write-src (.getPath (io/file output-dir "goog" "base.js"))) :append true)
+    (spit f (write-src output-path) :append true)
+    (spit f (write-body (apply str (map file->goog cljs))) :append true)))
+
+(defn- cljs-opts!
+  [{:keys [output-dir node-target output-to optimizations
+           pretty-print source-map no-warnings unified-mode]}]
+  (if (and unified-mode (not= optimizations :none))
+    (util/warn "unified-mode on; setting optimizations to :none\n"))
+  (let [optimizations (if unified-mode :none optimizations)
+        output-dir    (or output-dir "out")
+        output-path*  (or output-to "main.js")
+        output-path   (if-not unified-mode
+                        output-path*
+                        (output-path-for output-path*))
+        tmp-dir       (core/temp-dir!)
+        js-out        (io/file tmp-dir output-path)
+        shim          (io/file tmp-dir output-path*)
+        smap          (io/file tmp-dir (str output-path ".map"))
+        js-parent     (str (.getParent (io/file output-path)))
+        none?         (= :none optimizations)
+        keep-out?     (or source-map none?)
+        out-dir       (if-not keep-out?
+                        (core/temp-dir!)
+                        (apply io/file tmp-dir (remove empty? [js-parent output-dir])))
+        base-opts     {:libs          []
+                       :externs       []
+                       :preamble      []
+                       :foreign-libs  []
+                       :warnings      (not no-warnings)
+                       :output-to     (.getPath js-out)
+                       :output-dir    (.getPath out-dir)
+                       :pretty-print  (boolean pretty-print)
+                       :optimizations (or optimizations :whitespace)}
+        ;; src-map: see https://github.com/clojure/clojurescript/wiki/Source-maps
+        smap-opts   {:source-map-path (if none? js-parent output-dir)
+                     :source-map      (.getPath (if none? (file/relative-to tmp-dir smap) smap))}]
+    {:none?       none?
+     :js-out      js-out
+     :shim        shim
+     :shim-path   output-path*
+     :tmp-dir     tmp-dir
+     :output-dir  output-dir
+     :output-path output-path
+     :cljs-opts   (merge base-opts
+                         (when source-map smap-opts)
+                         (when node-target {:target :nodejs}))}))
+
+(defn- write-main-cljs!
+  [main-dir main]
+  (when main
+    (let [file      (core/tmpfile main)
+          path      (io/file (core/tmppath main))
+          name      (-> file .getName (.replaceAll "\\.main\\.edn$" ""))
+          js-out    (.getPath (replace-path path (str name ".js")))
+          cljs-out  (.getPath (replace-path path (str name ".cljs")))
+          cljs-file (.getPath (io/file main-dir cljs-out))
+          cljs-ns   (symbol (path->ns cljs-out))
+          init-fns  (:init-fns (read-string (slurp file)))
+          init-nss  (map (comp symbol namespace) init-fns)]
+      (io/make-parents (io/file cljs-file))
+      (->> [(bt/template
+              (ns ~cljs-ns
+                (:require ~@init-nss)))
+            (bt/template
+              (do ~@(map list init-fns)))]
+           (map pr-str)
+           (string/join "\n\n")
+           (spit cljs-file))
+      {:main-cljs cljs-file :main-path cljs-out :main-js js-out})))
 
 (core/deftask cljs
   "Compile ClojureScript applications.
@@ -73,55 +154,38 @@
    s source-map          bool "Create source map for compiled JS."
    W no-warnings         bool "Suppress compiler warnings."
    u unified-mode        bool "Unified mode"]
+
   (if (and unified-mode (not= optimizations :none))
     (util/warn "unified-mode on; setting optimizations to :none\n"))
-  (let [optimizations (if unified-mode :none optimizations)
-        output-dir  (or output-dir "out")
-        output-path* (or output-to "main.js")
-        output-path (output-path-for unified-mode output-path*)
-        tmp-dir     (core/temp-dir!)
-        js-out      (io/file tmp-dir output-path)
-        shim        (io/file tmp-dir output-path*)
-        smap        (io/file tmp-dir (str output-path ".map"))
-        js-parent   (str (.getParent (io/file output-path)))
-        none?       (= :none optimizations)
-        keep-out?   (or source-map none?)
-        out-dir     (if-not keep-out?
-                      (core/temp-dir!)
-                      (apply io/file tmp-dir (remove empty? [js-parent output-dir])))
-        base-opts   {:libs          []
-                     :externs       []
-                     :preamble      []
-                     :foreign-libs  []
-                     :warnings      (not no-warnings)
-                     :output-to     (.getPath js-out)
-                     :output-dir    (.getPath out-dir)
-                     :pretty-print  (boolean pretty-print)
-                     :optimizations (or optimizations :whitespace)}
-        ;; src-map: see https://github.com/clojure/clojurescript/wiki/Source-maps
-        smap-opts   {:source-map-path (if none? js-parent output-dir)
-                     :source-map      (.getPath (if none? (file/relative-to tmp-dir smap) smap))}
-        cljs-opts   (merge base-opts
-                           (when source-map smap-opts)
-                           (when node-target {:target :nodejs}))
-        pod-env     (-> (core/get-env) (update-in [:dependencies] into deps))
-        p           (pod/pod-pool pod-env)]
+  (let [main-dir (core/temp-dir!)
+        config   (atom nil)
+        pod-env  (-> (core/get-env) (update-in [:dependencies] into deps))
+        p        (pod/pod-pool pod-env)]
     (core/with-pre-wrap fileset
-      (io/make-parents js-out)
-      (let [srcs   (core/input-files fileset)
-            ->path (comp (memfn getPath) core/tmpfile)
-            incs   (->> srcs (core/by-ext [".inc.js"]) (mapv core/tmppath) sort)
-            cljs   (->> srcs (core/by-ext [".cljs"])   (mapv core/tmppath))
-            exts   (->> srcs (core/by-ext [".ext.js"]) (mapv ->path))
-            libs   (->> srcs (core/by-ext [".lib.js"]) (mapv ->path))]
+      (let [srcs      (core/input-files fileset)
+            ->path    (comp (memfn getPath) core/tmpfile)
+            main      (->> srcs (core/by-ext [".main.edn"]) first (write-main-cljs! main-dir))
+            incs      (->> srcs (core/by-ext [".inc.js"]) (mapv core/tmppath) sort)
+            cljs      (if main
+                        [(:main-path main)]
+                        (->> srcs (core/by-ext [".cljs"])   (mapv core/tmppath)))
+            exts      (->> srcs (core/by-ext [".ext.js"]) (mapv ->path))
+            libs      (->> srcs (core/by-ext [".lib.js"]) (mapv ->path))
+            opts      (assoc *opts* :output-to (or (:main-js main) output-to))
+            {:keys [tmp-dir js-out cljs-opts none? shim shim-path output-path output-dir]}
+                      (or @config (reset! config (cljs-opts! opts)))
+            cljs-opts (merge-with into cljs-opts {:libs     libs
+                                                  :externs  exts
+                                                  :preamble (if none? [] incs)})
+            sources   (if main
+                        [(.getPath main-dir)]
+                        (mapv #(.getPath %) (core/input-dirs fileset)))]
+        (io/make-parents js-out)
         (util/info "Compiling %s...\n" (.getName js-out))
-        (swap! core/*warnings* +
-               (let [preamble (if none? [] incs)]
-                 (-> (pod/with-call-in (p)
-                       (adzerk.boot-cljs.impl/compile-cljs
-                        ~(map (memfn getPath) (core/input-dirs fileset))
-                        ~(merge-with into cljs-opts {:libs libs :externs exts :preamble preamble})))
-                     (get :warnings 0))))
+        (->> (-> (pod/with-call-in (p)
+                   (adzerk.boot-cljs.impl/compile-cljs ~sources ~cljs-opts))
+                 (get :warnings 0))
+             (swap! core/*warnings* +))
         (when unified-mode
-          (write-shim! shim incs cljs output-path output-dir))
+          (write-shim! shim shim-path incs cljs output-path output-dir))
         (-> fileset (core/add-resource tmp-dir) core/commit!)))))
