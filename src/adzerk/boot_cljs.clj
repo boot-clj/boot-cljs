@@ -54,7 +54,7 @@
       (spit f (write-src inc) :append true))
     (spit f (write-src (.getPath (io/file output-dir "goog" "base.js"))) :append true)
     (spit f (write-src output-path) :append true)
-    (spit f (write-body (apply str (map file->goog cljs))) :append true)))
+    (spit f (write-body (apply str (sort (map file->goog cljs)))) :append true)))
 
 (defn- cljs-opts!
   [{:keys [output-dir node-target output-to optimizations
@@ -126,22 +126,24 @@
 (core/deftask cljs
   "Compile ClojureScript applications.
 
-  The default output-path is 'main.js'.
+  The default --output-path is 'main.js', but if a <name>.main.edn file exists
+  in the fileset the JS will be compiled to <name>.js and the --output-path
+  options will be ignored.
 
-  Available optimization levels (default 'whitespace'):
+  Available --optimization levels (default 'whitespace'):
 
     * none         No optimizations. Bypass the Closure compiler completely.
     * whitespace   Remove comments, unnecessary whitespace, and punctuation.
     * simple       Whitespace + local variable and function parameter renaming.
     * advanced     Simple + aggressive renaming, inlining, dead code elimination, etc.
 
-  The output-dir option is useful when using optimizations=none or when source
+  The --output-dir option is useful when using optimizations=none or when source
   maps are enabled. This option sets the name of the subdirectory (relative to
   the parent of the compiled JavaScript file) in which GClosure intermediate
   files will be written. The default name is 'out'.
 
-  The unified option automates the process of adding the necessary <script> tags
-  to HTML files when compiling with optimizations=none. When enabled, any HTML
+  The --unified-mode option automates the process of adding the necessary <script>
+  tags to HTML files when compiling with optimizations=none. When enabled, any HTML
   file that loads the output-to JS file via a script tag (as when compiling with
   optimizations) will have the base.js and goog.require() <script> tags added
   automatically."
@@ -153,14 +155,15 @@
    p pretty-print        bool "Pretty-print compiled JS."
    s source-map          bool "Create source map for compiled JS."
    W no-warnings         bool "Suppress compiler warnings."
-   u unified-mode        bool "Unified mode"]
+   u unified-mode        bool "Automatically add <script> tags when optimizations=none."]
 
   (if (and unified-mode (not= optimizations :none))
     (util/warn "unified-mode on; setting optimizations to :none\n"))
-  (let [main-dir (core/temp-dir!)
-        config   (atom nil)
-        pod-env  (-> (core/get-env) (update-in [:dependencies] into deps))
-        p        (pod/pod-pool pod-env)]
+  (let [main-dir   (core/temp-dir!)
+        config     (atom nil)
+        saved-cljs (atom nil)
+        pod-env    (-> (core/get-env) (update-in [:dependencies] into deps))
+        p          (pod/pod-pool pod-env)]
     (core/with-pre-wrap fileset
       (let [srcs      (core/input-files fileset)
             ->path    (comp (memfn getPath) core/tmpfile)
@@ -168,12 +171,12 @@
             incs      (->> srcs (core/by-ext [".inc.js"]) (mapv core/tmppath) sort)
             cljs      (if main
                         [(:main-path main)]
-                        (->> srcs (core/by-ext [".cljs"])   (mapv core/tmppath)))
+                        (->> srcs (core/by-ext [".cljs"]) (mapv core/tmppath)))
             exts      (->> srcs (core/by-ext [".ext.js"]) (mapv ->path))
             libs      (->> srcs (core/by-ext [".lib.js"]) (mapv ->path))
             opts      (assoc *opts* :output-to (or (:main-js main) output-to))
             {:keys [tmp-dir js-out cljs-opts none? shim shim-path output-path output-dir]}
-                      (or @config (reset! config (cljs-opts! opts)))
+            (or @config (reset! config (cljs-opts! opts)))
             cljs-opts (merge-with into cljs-opts {:libs     libs
                                                   :externs  exts
                                                   :preamble (if none? [] incs)})
