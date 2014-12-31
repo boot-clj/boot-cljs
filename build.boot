@@ -6,7 +6,7 @@
 
 (require '[adzerk.bootlaces :refer :all])
 
-(def +version+ "0.0-2411-7")
+(def +version+ "0.0-2411-8")
 
 (bootlaces! +version+)
 

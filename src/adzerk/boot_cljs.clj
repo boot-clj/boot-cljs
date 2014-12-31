@@ -50,8 +50,7 @@
   [f shim-path incs cljs output-path output-dir]
   (let [output-dir (replace-path shim-path output-dir)]
     (spit f "// boot-cljs shim\n")
-    (doseq [inc incs]
-      (spit f (write-src inc) :append true))
+    (doseq [inc incs] (spit f (write-src inc) :append true))
     (spit f (write-src (.getPath (io/file output-dir "goog" "base.js"))) :append true)
     (spit f (write-src output-path) :append true)
     (spit f (write-body (apply str (sort (map file->goog cljs)))) :append true)))
@@ -110,8 +109,10 @@
           cljs-out  (.getPath (replace-path path (str name ".cljs")))
           cljs-file (.getPath (io/file main-dir cljs-out))
           cljs-ns   (symbol (path->ns cljs-out))
-          init-fns  (:init-fns (read-string (slurp file)))
-          init-nss  (map (comp symbol namespace) init-fns)]
+          main-edn  (read-string (slurp file))
+          init-fns  (:init-fns main-edn)
+          requires  (set (:require main-edn))
+          init-nss  (sort (into requires (map (comp symbol namespace) init-fns)))]
       (io/make-parents (io/file cljs-file))
       (->> [(bt/template
               (ns ~cljs-ns
