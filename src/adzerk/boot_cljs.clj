@@ -53,7 +53,8 @@
   function findPrefix() {
     var els = document.getElementsByTagName('script');
     for (var i = 0; i < els.length; i++) {
-      var match = els[i].getAttribute('src').match(shimRegex);
+      var src = els[i].getAttribute('src');
+      var match = src && src.match(shimRegex);
       if (match) {
         return match[1];
       }
