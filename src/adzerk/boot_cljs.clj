@@ -40,20 +40,38 @@
 
 (defn- write-src
   [inc]
-  (format "document.write(\"<script src='%s'></script>\");\n" inc))
+  (format "document.write(\"<script src='\" + prefix + \"%s'></script>\");\n" inc))
 
 (defn- write-body
   [code]
   (format "document.write(\"<script>%s</script>\");\n" code))
 
+(def ^:private shim-js
+"// boot-cljs shim
+(function() {
+  var shimRegex = new RegExp('(.*)%s$');
+  function findPrefix() {
+    var els = document.getElementsByTagName('script');
+    for (var i = 0; i < els.length; i++) {
+      var match = els[i].getAttribute('src').match(shimRegex);
+      if (match) {
+        return match[1];
+      }
+    }
+    return '';
+  }
+  var prefix = findPrefix();
+%s%s})();
+")
+
 (defn- write-shim!
   [f shim-path incs cljs output-path output-dir]
-  (let [output-dir (replace-path shim-path output-dir)]
-    (spit f "// boot-cljs shim\n")
-    (doseq [inc incs] (spit f (write-src inc) :append true))
-    (spit f (write-src (.getPath (io/file output-dir "goog" "base.js"))) :append true)
-    (spit f (write-src output-path) :append true)
-    (spit f (write-body (apply str (sort (map file->goog cljs)))) :append true)))
+  (let [output-dir (replace-path shim-path output-dir)
+        scripts  (concat incs [(.getPath (io/file output-dir "goog" "base.js")) output-path])]
+    (spit f (format shim-js
+                    (.getName f)
+                    (apply str (map write-src scripts))
+                    (write-body (apply str (sort (map file->goog cljs))))))))
 
 (defn- cljs-opts!
   [{:keys [output-dir node-target output-to optimizations
