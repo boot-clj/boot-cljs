@@ -11,7 +11,7 @@
    [boot.util          :as util]))
 
 (def ^:private deps
-  '[[org.clojure/clojurescript "0.0-2498"]])
+  '[[org.clojure/clojurescript "0.0-2629"]])
 
 (defn- replace-path
   [path name]
