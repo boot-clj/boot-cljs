@@ -65,6 +65,31 @@
 %s%s})();
 ")
 
+(defn parent-seq
+  "Return sequence of this file and all it's parent directories"
+  [f]
+  (->> f io/file (iterate #(.getParentFile %)) (take-while identity)))
+
+(defn split-path [p]
+  (->> p parent-seq reverse (map (memfn getName))))
+
+(defn parent [f]
+  (.getParentFile f))
+
+(defn parent? [parent child]
+  (contains? (set (parent-seq child)) parent))
+
+(defn relative-to
+  "Return relative path to f from directory base."
+  [base f]
+  (loop [base base
+         parts []]
+    (if base
+      (if (parent? base f)
+        (apply io/file (concat parts [(str (.relativize (.toURI base) (.toURI f)))]))
+        (recur (parent base) (conj parts "..")))
+      (apply io/file (concat parts (split-path f))))))
+
 (defn- write-shim!
   [f shim-path incs cljs output-path output-dir]
   (let [output-dir (replace-path shim-path output-dir)
