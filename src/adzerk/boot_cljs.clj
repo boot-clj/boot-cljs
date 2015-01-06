@@ -143,6 +143,14 @@
            (spit cljs-file))
       {:main-cljs cljs-file :main-path cljs-out :main-js js-out})))
 
+(defn- sort-inc-js
+  [x y]
+  (let [[dx dy] (map :dependency-order [x y])
+        [nx ny] (map core/tmppath [x y])]
+    (cond (and dx dy) (compare dx dy)
+          (or dx dy)  (- (compare dx dy))
+          :else       (compare nx ny))))
+
 (core/deftask cljs
   "Compile ClojureScript applications.
 
@@ -177,8 +185,6 @@
    W no-warnings         bool "Suppress compiler warnings."
    u unified-mode        bool "Automatically add <script> tags when optimizations=none."]
 
-  (if (and unified-mode (not= optimizations :none))
-    (util/warn "unified-mode on; setting optimizations to :none\n"))
   (let [main-dir   (core/temp-dir!)
         config     (atom nil)
         saved-cljs (atom nil)
@@ -188,7 +194,8 @@
       (let [srcs      (core/input-files fileset)
             ->path    (comp (memfn getPath) core/tmpfile)
             main      (->> srcs (core/by-ext [".main.edn"]) first (write-main-cljs! main-dir))
-            incs      (->> srcs (core/by-ext [".inc.js"]) (mapv core/tmppath) sort)
+            incs      (->> srcs (core/by-ext [".inc.js"]) (sort sort-inc-js))
+            inc-urls  (->> incs (mapv core/tmppath))
             cljs      (if main
                         [(:main-path main)]
                         (->> srcs (core/by-ext [".cljs"]) (mapv core/tmppath)))
@@ -199,7 +206,7 @@
             (or @config (reset! config (cljs-opts! opts)))
             cljs-opts (merge-with into cljs-opts {:libs     libs
                                                   :externs  exts
-                                                  :preamble (if none? [] incs)})
+                                                  :preamble (if none? [] inc-urls)})
             sources   (if main
                         [(.getPath main-dir)]
                         (mapv #(.getPath %) (core/input-dirs fileset)))]
@@ -210,5 +217,8 @@
                  (get :warnings 0))
              (swap! core/*warnings* +))
         (when unified-mode
-          (write-shim! shim shim-path incs cljs output-path output-dir))
-        (-> fileset (core/add-resource tmp-dir) core/commit!)))))
+          (write-shim! shim shim-path inc-urls cljs output-path output-dir))
+        (-> fileset
+            (core/mv-resource (when none? incs))
+            (core/add-resource tmp-dir)
+            core/commit!)))))
