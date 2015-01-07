@@ -112,6 +112,7 @@
      :shim        shim
      :shim-path   output-path*
      :tmp-dir     tmp-dir
+     :out-dir     out-dir
      :output-dir  output-dir
      :output-path output-path
      :cljs-opts   (merge base-opts
@@ -160,10 +161,10 @@
 
   Available --optimization levels (default 'whitespace'):
 
-    * none         No optimizations. Bypass the Closure compiler completely.
-    * whitespace   Remove comments, unnecessary whitespace, and punctuation.
-    * simple       Whitespace + local variable and function parameter renaming.
-    * advanced     Simple + aggressive renaming, inlining, dead code elimination, etc.
+  * none         No optimizations. Bypass the Closure compiler completely.
+  * whitespace   Remove comments, unnecessary whitespace, and punctuation.
+  * simple       Whitespace + local variable and function parameter renaming.
+  * advanced     Simple + aggressive renaming, inlining, dead code elimination, etc.
 
   The --output-dir option is useful when using optimizations=none or when source
   maps are enabled. This option sets the name of the subdirectory (relative to
@@ -202,7 +203,7 @@
             exts      (->> srcs (core/by-ext [".ext.js"]) (mapv ->path))
             libs      (->> srcs (core/by-ext [".lib.js"]) (mapv ->path))
             opts      (assoc *opts* :output-to (or (:main-js main) output-to))
-            {:keys [tmp-dir js-out cljs-opts none? shim shim-path output-path output-dir]}
+            {:keys [tmp-dir js-out cljs-opts none? shim shim-path output-path out-dir output-dir]}
             (or @config (reset! config (cljs-opts! opts)))
             cljs-opts (merge-with into cljs-opts {:libs     libs
                                                   :externs  exts
@@ -212,13 +213,24 @@
                         (mapv #(.getPath %) (core/input-dirs fileset)))]
         (io/make-parents js-out)
         (util/info "Compiling %s...\n" (.getName js-out))
-        (->> (-> (pod/with-call-in (p)
-                   (adzerk.boot-cljs.impl/compile-cljs ~sources ~cljs-opts))
-                 (get :warnings 0))
-             (swap! core/*warnings* +))
-        (when unified-mode
-          (write-shim! shim shim-path inc-urls cljs output-path output-dir))
-        (-> fileset
-            (core/mv-resource (when none? incs))
-            (core/add-resource tmp-dir)
-            core/commit!)))))
+        (let [{:keys [warnings dep-order]}
+              (pod/with-call-in (p)
+                (adzerk.boot-cljs.impl/compile-cljs ~sources ~cljs-opts))
+              dep-order       (->> dep-order
+                                   (map #(.getPath (file/relative-to
+                                                     (.getParentFile out-dir)
+                                                     (io/file %)))))
+              start-dep-order (let [deps (seq (keep :dependency-order incs))]
+                                (inc (apply max (or deps [0]))))
+              dep-order-meta  (->> dep-order
+                                   (map-indexed #(let [i (+ %1 start-dep-order)]
+                                                   [%2 {:dependency-order i}]))
+                                   (into {}))]
+          (swap! core/*warnings* + (or warnings 0))
+          (when unified-mode
+            (write-shim! shim shim-path inc-urls cljs output-path output-dir))
+          (-> fileset
+              (core/mv-resource (when none? incs))
+              (core/add-resource tmp-dir)
+              (core/add-meta dep-order-meta)
+              core/commit!))))))
