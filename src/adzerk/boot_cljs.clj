@@ -259,6 +259,7 @@ window.__boot_cljs_shim_loaded = true;
         (let [{:keys [warnings dep-order]}
               (pod/with-call-in (p)
                 (adzerk.boot-cljs.impl/compile-cljs ~sources ~cljs-opts))
+              dep-order      (concat dep-order [shim-path])
               dep-order-meta (-> fileset
                                  (inc-js-dep-meta incs)
                                  (add-compiled-js-dep-meta dep-order))]
