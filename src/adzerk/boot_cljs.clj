@@ -40,11 +40,11 @@
 
 (defn- write-src
   [inc]
-  (format "document.write(\"<script src='\" + prefix + \"%s'></script>\");\n" inc))
+  (format "writeScript(\"<script src='\" + prefix + \"%s'></script>\");\n" inc))
 
 (defn- write-body
   [code]
-  (format "document.write(\"<script>%s</script>\");\n" code))
+  (format "writeScript(\"<script>%s</script>\");\n" code))
 
 (def ^:private shim-js
 "// boot-cljs shim
@@ -62,7 +62,29 @@
     return '';
   }
   var prefix = findPrefix();
-%s%s})();
+  var loadedSrcs = {};
+  var scripts;
+  scripts = document.getElementsByTagName('script');
+  for (var i = 0; i < scripts.length; i++) {
+    if (scripts[i].src !== undefined) {
+      loadedSrcs[scripts[i].src] = true;
+    }
+  }
+  function writeScript(src) {
+    var newElem;
+    if (window.__boot_cljs_shim_loaded === undefined) {
+      document.write(src);
+    } else {
+      newElem = document.createElement('div');
+      newElem.innerHTML = src;
+      if (newElem.src !== undefined && loaded[newElem.src] === undefined) {
+        document.getElementsByTagName('head')[0].appendChild(newElem);
+      }
+    }
+  };
+%s%s
+window.__boot_cljs_shim_loaded = true;
+})();
 ")
 
 (defn- write-shim!
