@@ -25,6 +25,8 @@
   @stored-env)
 
 (defn dep-order
+  "Returns a seq of paths for all js files created by CLJS compiler, relative
+  to the parent of the output-dir, and in dependency order."
   [env {:keys [output-dir]}]
   (let [cljs-nses (:cljs.compiler/compiled-cljs env)
         js-nses   (-> (fn [xs k v]
@@ -32,12 +34,13 @@
                       (reduce-kv {} (:js-dependency-index env)))
         all-nses  (-> (fn [xs k v]
                         (reduce #(assoc %1 (str %2) (str k)) xs (:provides v)))
-                      (reduce-kv {} (merge js-nses cljs-nses)))]
-    (-> (fn [xs k v]
-          (assoc xs k (set (keep (comp all-nses str) (:requires v)))))
-        (reduce-kv {} cljs-nses)
-        kahn/topo-sort
-        reverse)))
+                      (reduce-kv {} (merge js-nses cljs-nses)))
+        fs-path   #(.getPath (file/relative-to (.getParentFile (io/file output-dir)) (io/file %)))]
+    (map fs-path (-> (fn [xs k v]
+                       (assoc xs k (set (keep (comp all-nses str) (:requires v)))))
+                     (reduce-kv {} cljs-nses)
+                     kahn/topo-sort
+                     reverse))))
 
 (defn compile-cljs
   [src-paths {:keys [output-to] :as opts}]

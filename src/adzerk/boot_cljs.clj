@@ -112,7 +112,6 @@
      :shim        shim
      :shim-path   output-path*
      :tmp-dir     tmp-dir
-     :out-dir     out-dir
      :output-dir  output-dir
      :output-path output-path
      :cljs-opts   (merge base-opts
@@ -151,6 +150,28 @@
     (cond (and dx dy) (compare dx dy)
           (or dx dy)  (- (compare dx dy))
           :else       (compare nx ny))))
+
+(defn- max* [& args] (apply max (or (seq args) [0])))
+
+(defn- start-dep-order
+  [maps]
+  (->> maps (keep :dependency-order) (apply max*) inc))
+
+(defn- inc-js-dep-meta
+  "Note: tmpfiles expected to be sorted already"
+  [fileset tmpfiles]
+  (let [start (->> fileset core/ls start-dep-order)]
+    (->> tmpfiles
+         (map-indexed #(do [(core/tmppath %2) {:dependency-order (+ start %1)}]))
+         (into {}))))
+
+(defn- add-compiled-js-dep-meta
+  "Note: paths expected to be sorted already"
+  [js-dep-meta paths]
+  (let [start (->> js-dep-meta vals start-dep-order)]
+    (->> paths
+         (map-indexed #(do [%2 {:dependency-order (+ start %1)}]))
+         (into js-dep-meta))))
 
 (core/deftask cljs
   "Compile ClojureScript applications.
@@ -203,7 +224,7 @@
             exts      (->> srcs (core/by-ext [".ext.js"]) (mapv ->path))
             libs      (->> srcs (core/by-ext [".lib.js"]) (mapv ->path))
             opts      (assoc *opts* :output-to (or (:main-js main) output-to))
-            {:keys [tmp-dir js-out cljs-opts none? shim shim-path output-path out-dir output-dir]}
+            {:keys [tmp-dir js-out cljs-opts none? shim shim-path output-path output-dir]}
             (or @config (reset! config (cljs-opts! opts)))
             cljs-opts (merge-with into cljs-opts {:libs     libs
                                                   :externs  exts
@@ -216,16 +237,9 @@
         (let [{:keys [warnings dep-order]}
               (pod/with-call-in (p)
                 (adzerk.boot-cljs.impl/compile-cljs ~sources ~cljs-opts))
-              dep-order       (->> dep-order
-                                   (map #(.getPath (file/relative-to
-                                                     (.getParentFile out-dir)
-                                                     (io/file %)))))
-              start-dep-order (let [deps (seq (keep :dependency-order incs))]
-                                (inc (apply max (or deps [0]))))
-              dep-order-meta  (->> dep-order
-                                   (map-indexed #(let [i (+ %1 start-dep-order)]
-                                                   [%2 {:dependency-order i}]))
-                                   (into {}))]
+              dep-order-meta (-> fileset
+                                 (inc-js-dep-meta incs)
+                                 (add-compiled-js-dep-meta dep-order))]
           (swap! core/*warnings* + (or warnings 0))
           (when unified-mode
             (write-shim! shim shim-path inc-urls cljs output-path output-dir))
