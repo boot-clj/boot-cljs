@@ -1,14 +1,14 @@
 (ns adzerk.boot-cljs
   {:boot/export-tasks true}
-  (:require
-   [clojure.java.io    :as io]
-   [boot.from.backtick :as bt]
-   [clojure.set        :as set]
-   [clojure.string     :as string]
-   [boot.pod           :as pod]
-   [boot.core          :as core]
-   [boot.file          :as file]
-   [boot.util          :as util]))
+  (:require [clojure.java.io       :as io]
+            [boot.from.backtick    :as bt]
+            [clojure.set           :as set]
+            [clojure.string        :as string]
+            [boot.pod              :as pod]
+            [boot.core             :as core]
+            [boot.file             :as file]
+            [boot.util             :as util]
+            [adzerk.boot-cljs.shim :as shim]))
 
 (def ^:private deps
   '[[org.clojure/clojurescript "0.0-2629"]])
@@ -23,82 +23,6 @@
   [f]
   (let [fname (str "boot-cljs-" (.getName (io/file f)))]
     (replace-path f fname)))
-
-(defn- path->js
-  [path]
-  (-> path
-      (.replaceAll "\\.cljs$" "")
-      (.replaceAll "[/\\\\]" ".")))
-
-(defn- path->ns
-  [path]
-  (-> (path->js path) (.replaceAll "_" "-")))
-
-(defn- file->goog
-  [path]
-  (format "goog.require('%s');" (path->js path)))
-
-(defn- write-src
-  [inc]
-  (format "writeScript(\"<script src='\" + prefix + \"%s'></script>\");\n" inc))
-
-(defn- write-body
-  [code]
-  (format "writeScript(\"<script>%s</script>\");\n" code))
-
-(def ^:private shim-js
-"// boot-cljs shim
-(function() {
-  var shimRegex = new RegExp('(.*)%s$');
-  function findPrefix() {
-    var els = document.getElementsByTagName('script');
-    for (var i = 0; i < els.length; i++) {
-      var src = els[i].getAttribute('src');
-      var match = src && src.match(shimRegex);
-      if (match) {
-        return match[1];
-      }
-    }
-    return '';
-  }
-  var prefix = findPrefix();
-  var loadedSrcs = {};
-  var scripts = document.getElementsByTagName('script');
-  for (var i = 0; i < scripts.length; i++) {
-    if (scripts[i].src !== undefined) {
-      loadedSrcs[scripts[i].src] = true;
-    }
-  }
-  function writeScript(src) {
-    var newElem;
-    if (window.__boot_cljs_shim_loaded === undefined) {
-      document.write(src);
-    } else {
-      newElem = document.createElement('div');
-      newElem.innerHTML = src;
-      if (newElem.src !== undefined && loaded[newElem.src] === undefined) {
-        document.getElementsByTagName('head')[0].appendChild(newElem);
-      }
-    }
-  }
-%s%s
-window.__boot_cljs_shim_loaded = true;
-})();
-")
-
-(defn- write-shim!
-  [f shim-path incs cljs output-path output-dir]
-  (let [output-dir (replace-path shim-path output-dir)
-        shim-dir (.getParentFile (io/file shim-path))
-        scripts  (-> incs
-                     (->> (mapv io/file))
-                     (conj (io/file output-dir "goog" "base.js"))
-                     (conj output-path)
-                     (->> (mapv (partial file/relative-to shim-dir))))]
-    (spit f (format shim-js
-                    (.getName f)
-                    (apply str (map write-src scripts))
-                    (write-body (apply str (sort (map file->goog cljs))))))))
 
 (defn- cljs-opts!
   [{:keys [output-dir node-target output-to optimizations
@@ -153,7 +77,7 @@ window.__boot_cljs_shim_loaded = true;
           js-out    (.getPath (replace-path path (str name ".js")))
           cljs-out  (.getPath (replace-path path (str name ".cljs")))
           cljs-file (.getPath (io/file main-dir cljs-out))
-          cljs-ns   (symbol (path->ns cljs-out))
+          cljs-ns   (symbol (shim/path->ns cljs-out))
           main-edn  (read-string (slurp file))
           init-fns  (:init-fns main-edn)
           requires  (set (:require main-edn))
@@ -269,7 +193,8 @@ window.__boot_cljs_shim_loaded = true;
                                  (add-compiled-js-dep-meta dep-order))]
           (swap! core/*warnings* + (or warnings 0))
           (when unified-mode
-            (write-shim! shim shim-path inc-urls cljs output-path output-dir))
+            (shim/write-shim! shim shim-path inc-urls cljs output-path
+                              (replace-path shim-path output-dir)))
           (-> fileset
               (core/mv-resource (when none? incs))
               (core/add-resource tmp-dir)
