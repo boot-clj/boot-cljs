@@ -95,7 +95,7 @@ window.__boot_cljs_shim_loaded = true;
                      (->> (mapv io/file))
                      (conj (io/file output-dir "goog" "base.js"))
                      (conj output-path)
-                     (->> (mapv (partial relative-to shim-dir))))]
+                     (->> (mapv (partial file/relative-to shim-dir))))]
     (spit f (format shim-js
                     (.getName f)
                     (apply str (map write-src scripts))
