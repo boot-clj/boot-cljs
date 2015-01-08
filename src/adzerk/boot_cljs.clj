@@ -63,8 +63,7 @@
   }
   var prefix = findPrefix();
   var loadedSrcs = {};
-  var scripts;
-  scripts = document.getElementsByTagName('script');
+  var scripts = document.getElementsByTagName('script');
   for (var i = 0; i < scripts.length; i++) {
     if (scripts[i].src !== undefined) {
       loadedSrcs[scripts[i].src] = true;
@@ -81,7 +80,7 @@
         document.getElementsByTagName('head')[0].appendChild(newElem);
       }
     }
-  };
+  }
 %s%s
 window.__boot_cljs_shim_loaded = true;
 })();
