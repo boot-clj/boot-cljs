@@ -25,8 +25,8 @@
     (replace-path f fname)))
 
 (defn- cljs-opts!
-  [{:keys [output-dir node-target output-to optimizations
-           pretty-print source-map no-warnings unified-mode]}]
+  [{:keys [output-to optimizations source-map unified-mode] :as task-opts}
+   {:keys [output-dir] :as compiler-opts}]
   (if (and unified-mode (not= optimizations :none))
     (util/warn "unified-mode on; setting optimizations to :none\n"))
   (let [optimizations (if unified-mode :none optimizations)
@@ -45,14 +45,8 @@
         out-dir       (if-not keep-out?
                         (core/temp-dir!)
                         (apply io/file tmp-dir (remove empty? [js-parent output-dir])))
-        base-opts     {:libs          []
-                       :externs       []
-                       :preamble      []
-                       :foreign-libs  []
-                       :warnings      (not no-warnings)
-                       :output-to     (.getPath js-out)
+        required-opts {:output-to     (.getPath js-out)
                        :output-dir    (.getPath out-dir)
-                       :pretty-print  (boolean pretty-print)
                        :optimizations (or optimizations :whitespace)}
         ;; src-map: see https://github.com/clojure/clojurescript/wiki/Source-maps
         smap-opts   {:source-map-path (if none? js-parent output-dir)
@@ -64,9 +58,9 @@
      :tmp-dir     tmp-dir
      :output-dir  output-dir
      :output-path output-path
-     :cljs-opts   (merge base-opts
-                         (when source-map smap-opts)
-                         (when node-target {:target :nodejs}))}))
+     :cljs-opts   (merge compiler-opts
+                         required-opts
+                         (when source-map smap-opts))}))
 
 (defn- write-main-cljs!
   [main-dir main]
@@ -137,10 +131,11 @@
   * simple       Whitespace + local variable and function parameter renaming.
   * advanced     Simple + aggressive renaming, inlining, dead code elimination, etc.
 
-  The --output-dir option is useful when using optimizations=none or when source
-  maps are enabled. This option sets the name of the subdirectory (relative to
-  the parent of the compiled JavaScript file) in which GClosure intermediate
-  files will be written. The default name is 'out'.
+  The --compiler-options option can be used to set any other options that should
+  be passed to the Clojurescript compiler. A full list of options can be found here:
+  https://github.com/clojure/clojurescript/wiki/Compiler-Options.
+  Passing an :optimizations key in this map will have no effects as this
+  is handled by the --optimizations task option.
 
   The --unified-mode option automates the process of adding the necessary <script>
   tags to HTML files when compiling with optimizations=none. When enabled, any HTML
@@ -148,14 +143,11 @@
   optimizations) will have the base.js and goog.require() <script> tags added
   automatically."
 
-  [d output-dir NAME     str  "Subdirectory name for GClosure intermediate files."
-   n node-target         bool "Target Node.js for compilation."
-   o output-to PATH      str  "The output js file path relative to docroot."
-   O optimizations LEVEL kw   "The optimization level."
-   p pretty-print        bool "Pretty-print compiled JS."
-   s source-map          bool "Create source map for compiled JS."
-   W no-warnings         bool "Suppress compiler warnings."
-   u unified-mode        bool "Automatically add <script> tags when optimizations=none."]
+  [o output-to PATH        str  "The output js file path relative to docroot."
+   O optimizations LEVEL   kw   "The optimization level."
+   s source-map            bool "Create source map for compiled JS."
+   c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler"
+   u unified-mode          bool "Automatically add <script> tags when optimizations=none."]
 
   (let [main-dir   (core/temp-dir!)
         config     (atom nil)
@@ -175,7 +167,7 @@
             libs      (->> srcs (core/by-ext [".lib.js"]) (mapv ->path))
             opts      (assoc *opts* :output-to (or (:main-js main) output-to))
             {:keys [tmp-dir js-out cljs-opts none? shim shim-path output-path output-dir]}
-            (or @config (reset! config (cljs-opts! opts)))
+            (or @config (reset! config (cljs-opts! opts compiler-options)))
             cljs-opts (merge-with into cljs-opts {:libs     libs
                                                   :externs  exts
                                                   :preamble (if none? [] inc-urls)})
