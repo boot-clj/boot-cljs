@@ -25,8 +25,8 @@
     (replace-path f fname)))
 
 (defn- cljs-opts!
-  [{:keys [output-dir node-target output-to optimizations
-           pretty-print source-map no-warnings unified-mode]}]
+  [{:keys [output-to optimizations source-map unified-mode] :as task-opts}
+   {:keys [output-dir] :as compiler-opts}]
   (if (and unified-mode (not= optimizations :none))
     (util/warn "unified-mode on; setting optimizations to :none\n"))
   (let [optimizations (if unified-mode :none optimizations)
@@ -49,10 +49,8 @@
                        :externs       []
                        :preamble      []
                        :foreign-libs  []
-                       :warnings      (not no-warnings)
                        :output-to     (.getPath js-out)
                        :output-dir    (.getPath out-dir)
-                       :pretty-print  (boolean pretty-print)
                        :optimizations (or optimizations :whitespace)}
         ;; src-map: see https://github.com/clojure/clojurescript/wiki/Source-maps
         smap-opts   {:source-map-path (if none? js-parent output-dir)
@@ -66,7 +64,7 @@
      :output-path output-path
      :cljs-opts   (merge base-opts
                          (when source-map smap-opts)
-                         (when node-target {:target :nodejs}))}))
+                         (dissoc compiler-opts :output-dir :optimizations))}))
 
 (defn- write-main-cljs!
   [main-dir main]
