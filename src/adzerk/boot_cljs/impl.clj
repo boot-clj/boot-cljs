@@ -43,7 +43,7 @@
                      reverse))))
 
 (defn compile-cljs
-  [src-paths {:keys [output-to] :as opts}]
+  [src-paths opts]
   (let [counter (atom 0)
         handler (->> (fn [warning-type env & [extra]]
                        (when (warning-type ana/*cljs-warnings*)
