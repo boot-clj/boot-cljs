@@ -45,11 +45,7 @@
         out-dir       (if-not keep-out?
                         (core/temp-dir!)
                         (apply io/file tmp-dir (remove empty? [js-parent output-dir])))
-        base-opts     {:libs          []
-                       :externs       []
-                       :preamble      []
-                       :foreign-libs  []
-                       :output-to     (.getPath js-out)
+        required-opts {:output-to     (.getPath js-out)
                        :output-dir    (.getPath out-dir)
                        :optimizations (or optimizations :whitespace)}
         ;; src-map: see https://github.com/clojure/clojurescript/wiki/Source-maps
@@ -62,9 +58,9 @@
      :tmp-dir     tmp-dir
      :output-dir  output-dir
      :output-path output-path
-     :cljs-opts   (merge base-opts
-                         (when source-map smap-opts)
-                         (dissoc compiler-opts :output-dir :optimizations))}))
+     :cljs-opts   (merge compiler-opts
+                         required-opts
+                         (when source-map smap-opts))}))
 
 (defn- write-main-cljs!
   [main-dir main]
