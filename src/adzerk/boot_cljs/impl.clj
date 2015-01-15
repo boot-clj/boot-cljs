@@ -26,7 +26,7 @@
 
 (defn dep-order
   "Returns a seq of paths for all js files created by CLJS compiler, relative
-  to the parent of the output-dir, and in dependency order."
+  to the :output-to compiled JS file, and in dependency order."
   [env {:keys [output-dir]}]
   (let [cljs-nses (:cljs.compiler/compiled-cljs env)
         js-nses   (-> (fn [xs k v]
@@ -43,6 +43,12 @@
                      reverse))))
 
 (defn compile-cljs
+  "Given a seq of directories containing CLJS source files and compiler options
+  opts, compiles the CLJS to produce JS files.
+
+  Note: The files in src-paths are only the entry point for the compiler. Any
+  namespaces :require'd in those files will be retrieved from the class path,
+  so only application entry point namespaces need to be in src-paths."
   [src-paths opts]
   (let [counter (atom 0)
         handler (->> (fn [warning-type env & [extra]]
