@@ -107,7 +107,24 @@
         requires    (into (sorted-set) (:require main-edn))
         init-nss    (into requires (map (comp symbol namespace) init-fns))]
     (->> (main-ns-forms cljs-ns init-nss init-fns) format-ns-forms (spit cljs-file))
-    (assoc-in ctx [:opts :output-to] js-path)))
+    (-> ctx
+        (assoc-in [:opts :output-to] js-path)
+        (update-in [:opts] (partial merge-with util/into-or-latest) (:compiler-options main-edn)))))
+
+(def ^:private level-opts
+  "Compiler options to set for each compilation level."
+  {:none       nil
+   :whitespace nil
+   :simple     nil
+   :advanced   {:static-fns    true
+                :elide-asserts true
+                :pretty-print  false}})
+
+(defn level
+  "Middleware to set cljs compiler options for the compilation level. Settings
+  via task options etc. will override these."
+  [{{:keys [optimizations]} :opts :as ctx}]
+  (update-in ctx [:opts] util/merge-new-keys (level-opts optimizations)))
 
 (defn shim
   "Middleware to create the JS shim that automatically loads goog/base.js and
@@ -129,7 +146,7 @@
           cljs-paths (map core/tmppath (:cljs files))
           main*      (-> main core/tmppath deps/strip-extension)
           scripts    (-> (:incs files)
-                         (->> (mapv #(util/rooted-relative docroot (core/tmppath %))))
+                         (->> (mapv #(.getPath (util/rooted-file docroot (core/tmppath %)))))
                          (conj (io/file output-dir "goog" "base.js"))
                          (conj (util/get-name output-to)))]
       (->> (write-body (file->goog main*))

@@ -2,7 +2,7 @@
 
 [](dependency)
 ```clojure
-[adzerk/boot-cljs "0.0-2629-5"]
+[adzerk/boot-cljs "0.0-2629-6"] ;; latest release
 ```
 [](/dependency)
 
@@ -160,7 +160,8 @@ These files have the following structure (eg. `js/index.cljs.edn`):
 
 ```clojure
 {:require  [foo.bar baz.baf]
- :init-fns [foo.bar/init baz.baf/doit]}
+ :init-fns [foo.bar/init baz.baf/doit]
+ :compiler-options {:target :nodejs}}
 ```
 
 For each `.cljs.edn` file in the fileset, the `cljs` task will:
@@ -170,6 +171,9 @@ For each `.cljs.edn` file in the fileset, the `cljs` task will:
   will `:require` any namespaces given in the `:require` key of the EDN, and
   add a `do` expression that calls any functions in `:init-fns` at the top
   level. These functions will be called with no arguments.
+
+* Configure compiler options according to `:compiler-options` key of the EDN,
+  if there is one.
 
 * Configure the compiler to produce compiled JS at a location derived from the
   file's path, eg. given the file `foo/bar.cljs.edn` the output JS file will

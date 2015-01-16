@@ -58,5 +58,6 @@
     (ana/with-warning-handlers handler
       (binding [env/*compiler* (cljs-env opts)]
         (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts)
+        (reset! stored-env env/*compiler*)
         {:warnings  @counter
          :dep-order (dep-order @env/*compiler* opts)}))))

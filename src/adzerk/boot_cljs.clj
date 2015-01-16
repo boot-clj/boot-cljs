@@ -17,43 +17,27 @@
   '[[org.clojure/clojurescript "0.0-2629"]])
 
 (defn- set-output-dir-opts
-  "Given a map of cljs compiler options, sets the :output-dir field correctly
-  according to compilation level and whether source maps are enabled or not.
-  A temp directory is created and used if the :output-dir will not be added
-  to the compilation output."
-  [{:keys [source-map optimizations output-dir] :as opts} tmp-out]
-  (->> (if-not (or source-map (= :none optimizations))
-         (core/temp-dir!)
-         (doto (io/file tmp-out output-dir) .mkdirs))
-       .getPath
-       (assoc opts :output-dir)))
-
-(defn- set-compilation-level-opts
-  "Sets the cljs compiler options that depend on the compilation level."
-  [{:keys [optimizations] :as opts}]
-  (or (and (not= :advanced optimizations) opts)
-      (-> opts (util/merge-new-keys {:static-fns    true
-                                     :elide-asserts true
-                                     :pretty-print  false}))))
+  [{:keys [output-dir] :as opts} tmp-out]
+  (->> (doto (io/file tmp-out output-dir) .mkdirs) .getPath (assoc opts :output-dir)))
 
 (defn- initial-context
   "Create initial context object. This is the base configuration that each
   individual compile starts with, constructed using the options provided to
   the task constructor."
-  [tmp-out tmp-src task-options]
-  {:tmp-out tmp-out
-   :tmp-src tmp-src
-   :main    nil
-   :files   nil
-   :opts    (-> {:libs          []
-                 :externs       []
-                 :preamble      []
-                 :output-dir    "out"
-                 :optimizations :none}
-                (into (:compiler-options task-options))
-                (merge (dissoc task-options :compiler-options))
-                set-compilation-level-opts
-                (set-output-dir-opts tmp-out))})
+  [tmp-out tmp-src tmp-result task-options]
+  {:tmp-out    tmp-out
+   :tmp-src    tmp-src
+   :tmp-result tmp-result
+   :main       nil
+   :files      nil
+   :opts       (-> {:libs          []
+                    :externs       []
+                    :preamble      []
+                    :output-dir    "out"
+                    :optimizations :none}
+                   (into (:compiler-options task-options))
+                   (merge (dissoc task-options :compiler-options))
+                   (set-output-dir-opts tmp-out))})
 
 (defn- prep-context
   "Add per-compile fields to the base context object."
@@ -65,7 +49,7 @@
   compiler-ready context for this build."
   [{:keys [tmp-src tmp-out main files opts] :as ctx}]
   (util/delete-plain-files! tmp-out)
-  (->> ctx wrap/main wrap/shim wrap/externs wrap/source-map))
+  (->> ctx wrap/main wrap/level wrap/shim wrap/externs wrap/source-map))
 
 (defn- compile
   "Given a compiler context and a pod, compiles CLJS accordingly. Returns a
@@ -80,6 +64,13 @@
           (adzerk.boot-cljs.impl/compile-cljs ~sources ~opts))]
     (swap! core/*warnings* + (or warnings 0))
     (concat dep-order [(-> opts :output-to util/get-name)])))
+
+(defn- copy-to-docroot
+  "Copies everything the application needs, relative to its js file."
+  [docroot {:keys [tmp-out tmp-result] {:keys [incs]} :files}]
+  (util/sync-docroot! tmp-result docroot tmp-out)
+  (doseq [[p f] (map (juxt core/tmppath core/tmpfile) incs)]
+    (file/copy-with-lastmod f (io/file tmp-result (util/rooted-file docroot p)))))
 
 (core/deftask ^:private default-main
   "Private task---given a base compiler context creates a .cljs.edn file and
@@ -129,7 +120,7 @@
         tmp-src    (core/temp-dir!)
         tmp-out    (core/temp-dir!)
         tmp-result (core/temp-dir!)
-        ctx        (initial-context tmp-out tmp-src *opts*)]
+        ctx        (initial-context tmp-out tmp-src tmp-result *opts*)]
     (comp
       (default-main :context ctx)
       (core/with-pre-wrap fileset
@@ -142,10 +133,9 @@
                     dep-order (->> (compile ctx @pod)
                                    (map #(.getPath (util/rooted-file docroot %)))
                                    (concat dep-order))]
-                (util/sync-docroot! tmp-result docroot tmp-out)
+                (copy-to-docroot docroot ctx)
                 (recur more ctx dep-order))
               (-> fileset
-                  (core/mv-resource (when (= :none optimizations) incs))
                   (core/add-resource tmp-result)
                   (core/add-meta (-> fileset (deps/external incs) (deps/compiled dep-order)))
                   core/commit!))))))))

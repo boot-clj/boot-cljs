@@ -9,11 +9,16 @@
 (defn merge-new-keys
   "Merges map m2 into m1 after removing keys in m2 that are also in m1."
   [m1 m2]
-  (->> [m2 m1]
-       (map (comp set keys))
-       (apply set/difference)
-       (select-keys m2)
-       (merge m1)))
+  (or (and (not m2) m1)
+      (->> [m2 m1]
+           (map (comp set keys))
+           (apply set/difference)
+           (select-keys m2)
+           (merge m1))))
+
+(defn into-or-latest
+  [x y]
+  (if (and (coll? x) (coll? y)) (into x y) y))
 
 (defn replace-path
   "Given a path and a name returns a file in the same directory as path but
