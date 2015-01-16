@@ -67,10 +67,13 @@
     path
     (file/relative-to docroot path)))
 
-(defn sync-docroot!
+(defn copy-docroot!
   "Given a dest-dir, a relative path docroot, and some src-dirs, copies the
   contents of src-dirs into dest-dir/docroot/."
   [dest-dir docroot & src-dirs]
-  (let [out (if (empty? docroot) dest-dir (io/file dest-dir docroot))]
-    (apply core/sync! (doto out .mkdirs) src-dirs)))
-
+  (doseq [d src-dirs]
+    (doseq [in (->> d io/file file-seq (filter (memfn isFile)))]
+      (let [p (.getPath (file/relative-to d in))]
+        (let [out (io/file dest-dir (rooted-file docroot p))]
+          (when-not (and (.exists out) (= (.lastModified in) (.lastModified out)))
+            (file/copy-with-lastmod in (io/file dest-dir (rooted-file docroot p)))))))))

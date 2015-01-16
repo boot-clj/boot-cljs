@@ -68,7 +68,7 @@
 (defn- copy-to-docroot
   "Copies everything the application needs, relative to its js file."
   [docroot {:keys [tmp-out tmp-result] {:keys [incs]} :files}]
-  (util/sync-docroot! tmp-result docroot tmp-out)
+  (util/copy-docroot! tmp-result docroot tmp-out)
   (doseq [[p f] (map (juxt core/tmppath core/tmpfile) incs)]
     (file/copy-with-lastmod f (io/file tmp-result (util/rooted-file docroot p)))))
 
