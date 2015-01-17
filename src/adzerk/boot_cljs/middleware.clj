@@ -138,7 +138,7 @@
     (let [incs (->> (:incs files)
                     (map core/tmppath)
                     (remove #(contains? (set (:preamble opts)) %)))]
-      (update-in ctx [:opts :preamble] into incs))
+      (update-in ctx [:opts :preamble] (comp vec distinct into) incs))
     (let [shim-path  (:output-to opts)
           shim-name  (util/get-name shim-path)
           output-to  (output-path-for shim-path)
@@ -161,7 +161,7 @@
   [{:keys [tmp-src tmp-out main files opts] :as ctx}]
   (let [exts (map core/tmppath (:exts files))
         libs (map core/tmppath (:libs files))]
-    (update-in ctx [:opts] (partial merge-with into) {:libs libs :externs exts})))
+    (update-in ctx [:opts] (partial merge-with (comp vec distinct into)) {:libs libs :externs exts})))
 
 (defn source-map
   "Middleware to configure source map related CLJS compiler options."
