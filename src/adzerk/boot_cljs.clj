@@ -126,16 +126,17 @@
       (core/with-pre-wrap fileset
         (core/empty-dir! tmp-result)
         (let [{:keys [main incs cljs] :as fs} (deps/scan-fileset fileset)]
-          (loop [[m & more] main, {{:keys [optimizations]} :opts :as ctx} ctx, dep-order nil]
-            (if m
-              (let [docroot   (.getParent (io/file (core/tmppath m)))
-                    ctx       (prep-compile (prep-context m fs docroot ctx))
-                    dep-order (->> (compile ctx @pod)
-                                   (map #(.getPath (util/rooted-file docroot %)))
-                                   (concat dep-order))]
-                (copy-to-docroot docroot ctx)
-                (recur more ctx dep-order))
-              (-> fileset
-                  (core/add-resource tmp-result)
-                  (core/add-meta (-> fileset (deps/external incs) (deps/compiled dep-order)))
-                  core/commit!))))))))
+          (loop [[m & more] main, dep-order nil]
+            (let [{{:keys [optimizations]} :opts :as ctx} ctx]
+              (if m
+                (let [docroot   (.getParent (io/file (core/tmppath m)))
+                      ctx       (prep-compile (prep-context m fs docroot ctx))
+                      dep-order (->> (compile ctx @pod)
+                                     (map #(.getPath (util/rooted-file docroot %)))
+                                     (concat dep-order))]
+                  (copy-to-docroot docroot ctx)
+                  (recur more dep-order))
+                (-> fileset
+                    (core/add-resource tmp-result)
+                    (core/add-meta (-> fileset (deps/external incs) (deps/compiled dep-order)))
+                    core/commit!)))))))))
