@@ -134,21 +134,28 @@
   level this middleware adds external JS files to the compiler preamble and
   doesn't create a shim."
   [{:keys [tmp-src tmp-out main files opts docroot] :as ctx}]
-  (if-not (= :none (:optimizations opts))
+  (cond
+    (= :nodejs (:target opts))
+    ctx
+
+    (not= :none (:optimizations opts))
     (let [incs (->> (:incs files)
                     (map core/tmppath)
                     (remove #(contains? (set (:preamble opts)) %)))]
       (update-in ctx [:opts :preamble] (comp vec distinct into) incs))
-    (let [shim-path  (:output-to opts)
-          shim-name  (util/get-name shim-path)
-          output-to  (output-path-for shim-path)
-          output-dir (util/get-name (:output-dir opts))
-          cljs-paths (map core/tmppath (:cljs files))
-          main*      (-> main core/tmppath deps/strip-extension)
-          scripts    (-> (:incs files)
-                         (->> (mapv #(.getPath (util/rooted-file docroot (core/tmppath %)))))
-                         (conj (io/file output-dir "goog" "base.js"))
-                         (conj (util/get-name output-to)))]
+
+    :else
+    (let [shim-path   (:output-to opts)
+          shim-name   (util/get-name shim-path)
+          output-to   (output-path-for shim-path)
+          output-dir  (util/get-name (:output-dir opts))
+          cljs-paths  (map core/tmppath (:cljs files))
+          main*       (-> main core/tmppath deps/strip-extension)
+          rooted-path #(.getPath (util/rooted-file docroot (core/tmppath %)))
+          scripts     (-> (:incs files)
+                          (->> (mapv rooted-path))
+                          (conj (io/file output-dir "goog" "base.js"))
+                          (conj (util/get-name output-to)))]
       (->> (write-body (file->goog main*))
            (format shim-js shim-name (apply str (map write-src scripts)))
            (spit shim-path))
