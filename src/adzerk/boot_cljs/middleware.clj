@@ -151,7 +151,7 @@
           output-dir  (util/get-name (:output-dir opts))
           cljs-paths  (map core/tmppath (:cljs files))
           main*       (-> main core/tmppath deps/strip-extension)
-          rooted-path #(.getPath (util/rooted-relative docroot (core/tmppath %)))
+          rooted-path #(util/rooted-relative docroot (core/tmppath %))
           scripts     (-> (:incs files)
                           (->> (mapv rooted-path))
                           (conj (io/file output-dir "goog" "base.js"))
