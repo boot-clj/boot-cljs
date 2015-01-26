@@ -201,8 +201,8 @@ See the [adzerk/boot-cljs-repl][boot-cljs-repl] boot task.
 
 ### Preamble, Externs, and Lib Files
 
-The `cljs` task figures out what to do with these files by scanning for
-resources on the classpath that have special filename extensions.
+The `cljs` task figures out what to do with these files by scanning
+files in the fileset that have special filename extensions.
 
 File extensions recognized by the `cljs` task:
 
