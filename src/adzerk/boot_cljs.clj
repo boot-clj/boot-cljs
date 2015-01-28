@@ -14,7 +14,7 @@
 
 (def ^:private deps
   "ClojureScript dependency to load in the pod."
-  '[[org.clojure/clojurescript "0.0-2629"]])
+  '[[org.clojure/clojurescript "0.0-2727"]])
 
 (defn- set-output-dir-opts
   [{:keys [output-dir] :as opts} tmp-out]
@@ -49,6 +49,7 @@
   compiler-ready context for this build."
   [{:keys [tmp-src tmp-out main files opts] :as ctx}]
   (util/delete-plain-files! tmp-out)
+  (util/delete-plain-files! tmp-src)
   (->> ctx wrap/main wrap/level wrap/shim wrap/externs wrap/source-map))
 
 (defn- compile

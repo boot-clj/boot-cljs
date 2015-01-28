@@ -2,7 +2,7 @@
 
 [](dependency)
 ```clojure
-[adzerk/boot-cljs "0.0-2629-9"] ;; latest release
+[adzerk/boot-cljs "0.0-2727-0"] ;; latest release
 ```
 [](/dependency)
 
@@ -201,10 +201,12 @@ See the [adzerk/boot-cljs-repl][boot-cljs-repl] boot task.
 
 ### Preamble, Externs, and Lib Files
 
-The `cljs` task figures out what to do with these files by scanning for
-resources on the classpath that have special filename extensions.
+Jars with `deps.cljs`, like the ones provided by [cljsjs][cljsjs] can
+be used to supply Javascript libraries. Alternatively the mechanism
+described below can be used:
 
-File extensions recognized by the `cljs` task:
+The `cljs` task scans the fileset for files that have special filename
+extensions. File extensions recognized by the `cljs` task:
 
 * `.inc.js`: JavaScript preamble files–these are prepended to the compiled
   Javascript in dependency order (i.e. if jar B depends on jar A then entries
@@ -303,9 +305,9 @@ You will see the preamble inserted at the top of `main.js`, and the references
 to `Barp.bazz()` are not mangled by the Closure compiler. Whew!
 
 ### Further Reading
+
 For an example project with a local web server, CLJS REPL, and live-reload,
 check out [boot-cljs-example]!
-
 
 ## License
 
@@ -325,3 +327,4 @@ your option) any later version.
 [closure-externs]:     https://developers.google.com/closure/compiler/docs/api-tutorial3#externs
 [boot-cljs-example]:   https://github.com/adzerk/boot-cljs-example
 [cljs-opts]:           https://github.com/clojure/clojurescript/wiki/Compiler-Options
+[cljsjs]:              https://github.com/cljsjs/packages
