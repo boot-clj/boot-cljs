@@ -145,7 +145,8 @@
       (update-in ctx [:opts :preamble] (comp vec distinct into) incs))
 
     :else
-    (let [shim-path   (:output-to opts)
+    (let [base-name   (-> main core/tmpfile .getName deps/strip-extension)
+          shim-path   (:output-to opts)
           shim-name   (util/get-name shim-path)
           output-to   (output-path-for shim-path)
           output-dir  (util/get-name (:output-dir opts))
@@ -155,7 +156,7 @@
                           (->> (mapv rooted-path))
                           (conj (io/file output-dir "goog" "base.js"))
                           (conj (util/get-name output-to)))]
-      (->> (write-body (file->goog "boot/cljs/main"))
+      (->> (write-body (file->goog (str "boot/cljs/" base-name)))
            (format shim-js shim-name (apply str (map write-src scripts)))
            (spit shim-path))
       (assoc-in ctx [:opts :output-to] output-to))))
