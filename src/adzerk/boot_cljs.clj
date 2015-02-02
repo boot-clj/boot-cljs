@@ -14,7 +14,7 @@
 
 (def ^:private deps
   "ClojureScript dependency to load in the pod."
-  '[[org.clojure/clojurescript "0.0-2740"]])
+  '[[org.clojure/clojurescript "0.0-2755"]])
 
 (defn- set-output-dir-opts
   [{:keys [output-dir] :as opts} tmp-out]
