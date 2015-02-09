@@ -99,7 +99,7 @@
   (let [[path file] ((juxt core/tmppath core/tmpfile) main)
         base-name   (-> file .getName deps/strip-extension)
         js-path     (.getPath (io/file tmp-out (str base-name ".js")))
-        cljs-path   (.getPath (io/file (str "boot/cljs/" base-name ".cljs")))
+        cljs-path   (.getPath (io/file "boot" "cljs" (str base-name ".cljs")))
         cljs-file   (doto (io/file tmp-src cljs-path) io/make-parents)
         cljs-ns     (symbol (util/path->ns cljs-path))
         main-edn    (read-string (slurp file))
