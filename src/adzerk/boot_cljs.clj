@@ -13,8 +13,9 @@
     [adzerk.boot-cljs.js-deps    :as deps]))
 
 (def ^:private deps
-  "ClojureScript dependency to load in the pod."
-  '[[org.clojure/clojurescript "0.0-2760"]])
+  "ClojureScript dependency to load in the pod if
+   none is provided via project"
+  (delay (remove pod/dependency-loaded? '[[org.clojure/clojurescript "0.0-2814"]])))
 
 (defn- set-output-dir-opts
   [{:keys [output-dir] :as opts} tmp-out]
@@ -116,7 +117,7 @@
    s source-map            bool "Create source maps for compiled JS."
    c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler."]
 
-  (let [pod-env    (-> (core/get-env) (update-in [:dependencies] into deps))
+  (let [pod-env    (-> (core/get-env) (update-in [:dependencies] into (vec (seq @deps))))
         pod        (future (pod/make-pod pod-env))
         tmp-src    (core/temp-dir!)
         tmp-out    (core/temp-dir!)
