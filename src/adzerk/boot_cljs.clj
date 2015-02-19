@@ -7,15 +7,32 @@
     [boot.pod                    :as pod]
     [boot.core                   :as core]
     [boot.file                   :as file]
-    [boot.util                   :refer [info dbug]]
+    [boot.util                   :refer [info dbug warn]]
     [adzerk.boot-cljs.util       :as util]
     [adzerk.boot-cljs.middleware :as wrap]
     [adzerk.boot-cljs.js-deps    :as deps]))
 
+(def +version+ "0.0-2814")
+
 (def ^:private deps
   "ClojureScript dependency to load in the pod if
    none is provided via project"
-  (delay (remove pod/dependency-loaded? '[[org.clojure/clojurescript "0.0-2814"]])))
+  (delay (remove pod/dependency-loaded? '[[org.clojure/clojurescript "0.0.0"]])))
+
+(defn warn-on-cljs-version-differences []
+  (let [proj-deps  (core/get-env :dependencies)
+        proj-dep?  (set (map first proj-deps))
+        all-deps   (map :dep (pod/resolve-dependencies (core/get-env)))
+        trans-deps (remove #(-> % first proj-dep?) all-deps)
+        cljs?      #{'org.clojure/clojurescript}
+        find-cljs  (fn [ds] (first (filter #(-> % first cljs?) ds)))
+        trans-cljs (find-cljs trans-deps)
+        proj-cljs  (find-cljs proj-deps)]
+    (cond
+      (and proj-cljs (neg? (compare (second proj-cljs) +version+)))
+      (warn "WARNING: CLJS version older than boot-cljs: %s\n" (second proj-cljs))
+      (and trans-cljs (not= (second trans-cljs) +version+))
+      (warn "WARNING: Different CLJS version via transitive dependency: %s\n" (second trans-cljs)))))
 
 (defn- set-output-dir-opts
   [{:keys [output-dir] :as opts} tmp-out]
@@ -123,6 +140,8 @@
         tmp-out    (core/temp-dir!)
         tmp-result (core/temp-dir!)
         ctx        (initial-context tmp-out tmp-src tmp-result *opts*)]
+
+    (warn-on-cljs-version-differences)
     (comp
       (default-main :context ctx)
       (core/with-pre-wrap fileset
