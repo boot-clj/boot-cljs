@@ -154,7 +154,7 @@
           rooted-path #(util/rooted-relative docroot (core/tmppath %))
           scripts     (-> (:incs files)
                           (->> (mapv rooted-path))
-                          (conj (io/file output-dir "goog" "base.js"))
+                          (conj (str output-dir "/goog/base.js"))
                           (conj (util/get-name output-to)))]
       (->> (write-body (file->goog (str "boot/cljs/" base-name)))
            (format shim-js shim-name (apply str (map write-src scripts)))
