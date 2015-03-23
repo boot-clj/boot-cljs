@@ -68,7 +68,7 @@
   [{:keys [tmp-src tmp-out main files opts] :as ctx}]
   (util/delete-plain-files! tmp-out)
   (util/delete-plain-files! tmp-src)
-  (->> ctx wrap/main wrap/level wrap/shim wrap/externs wrap/source-map))
+  (->> ctx wrap/main wrap/shim wrap/externs wrap/source-map))
 
 (defn- compile
   "Given a compiler context and a pod, compiles CLJS accordingly. Returns a
