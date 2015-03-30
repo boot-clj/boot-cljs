@@ -3,8 +3,6 @@
     [clojure.java.io          :as io]
     [boot.from.backtick       :as bt]
     [clojure.string           :as string]
-    [boot.pod                 :as pod]
-    [boot.file                :as file]
     [boot.core                :as core]
     [adzerk.boot-cljs.util    :as util]
     [adzerk.boot-cljs.js-deps :as deps]))
@@ -36,7 +34,7 @@
   set the compiler :output-to option accordingly. The :output-to will be derived
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
-  [{:keys [tmp-src tmp-out main files opts] :as ctx}]
+  [{:keys [tmp-src tmp-out main] :as ctx}]
   (let [[path file] ((juxt core/tmppath core/tmpfile) main)
         base-name   (-> file .getName deps/strip-extension)
         ; FIXME: WINDOWS!
@@ -58,7 +56,7 @@
         (update-in [:opts] (partial merge-with util/into-or-latest) (:compiler-options main-edn)))))
 
 (defn shim
-  [{:keys [tmp-src tmp-out main files opts docroot] :as ctx}]
+  [{:keys [files opts] :as ctx}]
   (let [incs (->> (:incs files)
                   (map core/tmppath)
                   (remove #(contains? (set (:preamble opts)) %)))]
@@ -68,14 +66,14 @@
   "Middleware to add externs files (i.e. files with the .ext.js extension) and
   Google Closure libs (i.e. files with the .lib.js extension) from the fileset
   to the CLJS compiler options."
-  [{:keys [tmp-src tmp-out main files opts] :as ctx}]
+  [{:keys [files] :as ctx}]
   (let [exts (map core/tmppath (:exts files))
         libs (map core/tmppath (:libs files))]
     (update-in ctx [:opts] (partial merge-with (comp vec distinct into)) {:libs libs :externs exts})))
 
 (defn source-map
   "Middleware to configure source map related CLJS compiler options."
-  [{:keys [tmp-src tmp-out main files docroot opts] :as ctx}]
+  [{:keys [opts] :as ctx}]
   (if-not (:source-map opts)
     ctx
     (let [sm  (-> opts :output-to (str ".map"))

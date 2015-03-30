@@ -2,16 +2,11 @@
   (:require
     [clojure.pprint  :refer [pprint]]
     [clojure.java.io :as io]
-    [boot.pod        :as pod]
     [boot.kahnsort   :as kahn]
     [boot.file       :as file]
     [cljs.env        :as env]
     [cljs.closure    :as cljs]
-    [cljs.analyzer   :as ana])
-  (:import
-    [cljs.closure JavaScriptFile]
-    [java.net URL URI]
-    [java.util UUID]))
+    [cljs.analyzer   :as ana]))
 
 (defrecord CljsSourcePaths [paths]
   cljs/Compilable
