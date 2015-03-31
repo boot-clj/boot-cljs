@@ -66,8 +66,15 @@
   "Given a per-compile base context, applies middleware to obtain the final,
   compiler-ready context for this build."
   [{:keys [tmp-src tmp-out main files opts] :as ctx}]
-  (util/delete-plain-files! tmp-out)
-  (util/delete-plain-files! tmp-src)
+  (when (not= (:optimizations opts) :none)
+    (info "Emptying compiler cache...\n")
+    (doseq [dir   [tmp-src tmp-out]
+            f     (.listFiles dir)
+            :let  [out (io/file dir (.getName (io/file (:output-dir opts))))]
+            :when (not= f out)]
+      ;; Selective deletion prevents independent builds from
+      ;; interfering with eachother while also preserving source maps.
+      (file/delete-all f)))
   (->> ctx wrap/main wrap/level wrap/shim wrap/externs wrap/source-map))
 
 (defn- compile

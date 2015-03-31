@@ -42,12 +42,6 @@
   [path]
   (-> (path->js path) (.replaceAll "_" "-")))
 
-(defn delete-plain-files!
-  "Delete all regular files in the given dir. (Not recursive.)"
-  [dir]
-  (doseq [f (-> dir .listFiles seq)]
-    (when (.isFile f) (io/delete-file f true))))
-
 (defn get-name
   [path-or-file]
   (-> path-or-file io/file .getName))
