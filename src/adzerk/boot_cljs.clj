@@ -75,7 +75,7 @@
       ;; Selective deletion prevents independent builds from
       ;; interfering with eachother while also preserving source maps.
       (file/delete-all f)))
-  (->> ctx wrap/main wrap/level wrap/shim wrap/externs wrap/source-map))
+  (->> ctx wrap/main wrap/shim wrap/externs wrap/source-map))
 
 (defn- compile
   "Given a compiler context and a pod, compiles CLJS accordingly. Returns a
