@@ -80,4 +80,8 @@
     ctx
     (let [sm  (-> opts :output-to (str ".map"))
           dir (.getName (io/file (:output-dir opts)))]
-      (update-in ctx [:opts] assoc :source-map sm :source-map-path dir))))
+      ; Under :none optimizations only true and false are valid values:
+      ; https://github.com/clojure/clojurescript/wiki/Compiler-Options#source-map
+      (update-in ctx [:opts] assoc
+                 :source-map (if (= (:optimizations opts) :none) true sm)
+                 :source-map-path dir))))
