@@ -55,7 +55,7 @@
   files, .main.edn files, and external JS preamble files."
   [fileset]
   (let [srcs (core/input-files fileset)]
-    {:cljs (->> srcs (core/by-ext     [".cljs"]) (sort-by :path))
+    {:cljs (->> srcs (core/by-ext     [".cljs" ".cljc"]) (sort-by :path))
      :exts (->> srcs (core/by-ext   [".ext.js"]) (sort-by :path))
      :libs (->> srcs (core/by-ext   [".lib.js"]) (sort-by :path))
      :main (->> srcs (core/by-ext [".cljs.edn"]) (sort-by :path))
