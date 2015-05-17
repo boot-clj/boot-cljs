@@ -1,12 +1,12 @@
 (set-env!
-  :dependencies '[[org.clojure/clojure       "1.6.0"      :scope "provided"]
-                  [boot/core                 "2.0.0-rc13" :scope "provided"]
+  :dependencies '[[org.clojure/clojure       "1.7.0-beta3" :scope "provided"]
+                  [boot/core                 "2.0.0-rc14" :scope "provided"]
                   [adzerk/bootlaces          "0.1.11"     :scope "test"]
-                  [org.clojure/clojurescript "0.0-3126"   :scope "test"]])
+                  [org.clojure/clojurescript "0.0-3269"   :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
 
-(def +version+ "0.0-3126-0")
+(def +version+ "0.0-3269-0")
 
 (bootlaces! +version+)
 
