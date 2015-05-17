@@ -48,10 +48,7 @@
    :tmp-result tmp-result
    :main       nil
    :files      nil
-   :opts       (-> {:libs          []
-                    :externs       []
-                    :preamble      []
-                    :output-dir    "out"
+   :opts       (-> {:output-dir    "out"
                     :optimizations :none}
                    (into (:compiler-options task-options))
                    (merge (dissoc task-options :compiler-options))
@@ -75,7 +72,7 @@
       ;; Selective deletion prevents independent builds from
       ;; interfering with eachother while also preserving source maps.
       (file/delete-all f)))
-  (->> ctx wrap/main wrap/shim wrap/externs wrap/source-map))
+  (->> ctx wrap/main wrap/source-map))
 
 (defn- compile
   "Given a compiler context and a pod, compiles CLJS accordingly. Returns a
@@ -93,10 +90,8 @@
 
 (defn- copy-to-docroot
   "Copies everything the application needs, relative to its js file."
-  [docroot {:keys [tmp-out tmp-result] {:keys [incs]} :files}]
-  (util/copy-docroot! tmp-result docroot tmp-out)
-  (doseq [[p f] (map (juxt core/tmppath core/tmpfile) incs)]
-    (file/copy-with-lastmod f (io/file tmp-result (util/rooted-file docroot p)))))
+  [docroot {:keys [tmp-out tmp-result]}]
+  (util/copy-docroot! tmp-result docroot tmp-out))
 
 (core/deftask ^:private default-main
   "Private task---given a base compiler context creates a .cljs.edn file and
@@ -153,7 +148,7 @@
       (default-main :context ctx)
       (core/with-pre-wrap fileset
         (core/empty-dir! tmp-result)
-        (let [{:keys [main incs cljs] :as fs} (deps/scan-fileset fileset)]
+        (let [{:keys [main cljs] :as fs} (deps/scan-fileset fileset)]
           (loop [[m & more] main, dep-order nil]
             (let [{{:keys [optimizations]} :opts :as ctx} ctx]
               (if m
@@ -166,5 +161,5 @@
                   (recur more dep-order))
                 (-> fileset
                     (core/add-resource tmp-result)
-                    (core/add-meta (-> fileset (deps/external incs) (deps/compiled dep-order)))
+                    (core/add-meta (-> fileset (deps/compiled dep-order)))
                     core/commit!)))))))))
