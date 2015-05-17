@@ -212,8 +212,8 @@ And add the following contents to `build.boot`:
 
 ```clj
 (set-env!
-  :src-paths    #{"src"}
-  :rsc-paths    #{"html"}
+  :source-paths    #{"src"}
+  :resource-paths    #{"html"}
   :dependencies '[[adzerk/boot-cljs "0.0-X-Y" :scope "test"]])
 
 (require '[adzerk.boot-cljs :refer :all])
