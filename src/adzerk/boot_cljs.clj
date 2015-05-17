@@ -128,6 +128,9 @@
   browser needs to map locations in the compiled JavaScript to the corresponding
   locations in the original ClojureScript source files.
 
+  The task will search for *.cljs.edn files in fileset which can be used to
+  configure multiple builds.
+
   The --compiler-options option can be used to set any other options that should
   be passed to the Clojurescript compiler. A full list of options can be found
   here: https://github.com/clojure/clojurescript/wiki/Compiler-Options."
