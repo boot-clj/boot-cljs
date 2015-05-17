@@ -75,7 +75,6 @@ The HTML file will always need to have a `<script>` tag to load the compiled
 JavaScript:
 
 ```html
-<!-- compiling with optimizations != none -->
 <script type='text/javascript' src='main.js'></script>
 ```
 
