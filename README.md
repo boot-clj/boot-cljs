@@ -168,7 +168,9 @@ to the application's HTML file via a `<script>` tag.
 
 ### Browser REPL
 
-See the [adzerk/boot-cljs-repl][boot-cljs-repl] boot task.
+**boot-cljs-repl is not yet updated for the latest release**
+
+~~See the [adzerk/boot-cljs-repl][boot-cljs-repl] boot task.~~
 
 ### Preamble and Externs Files
 
