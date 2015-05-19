@@ -13,11 +13,31 @@
     [adzerk.boot-cljs.js-deps    :as deps]))
 
 (def cljs-version "0.0-3269")
+(def clj-version "1.7.0-beta3")
 
 (def ^:private deps
   "ClojureScript dependency to load in the pod if
    none is provided via project"
   (delay (remove pod/dependency-loaded? `[[org.clojure/clojurescript ~cljs-version]])))
+
+(def ^:private clj? #{'org.clojure/clojure})
+(defn- assert-clojure-version
+  "Update Clojure dependency if the user has not required version 1.7
+   using BOOT_CLOJURE_VERSION or env :dependencies."
+  [deps]
+  (if (some (comp clj? second) deps)
+    (map (fn [[pkg version :as v]]
+           (if (and (clj? pkg) (neg? (compare version "1.7.0")))
+             (do
+               (info (format "Using Clojure %s for Cljs compiler\n" clj-version))
+               [pkg clj-version])
+             v))
+         deps)
+    (if (neg? (compare (clojure-version) "1.7.0"))
+      (do
+        (info (format "Adding Clojure %s for Cljs compiler\n" clj-version))
+        (conj deps ['org.clojure/clojure clj-version]))
+      deps)))
 
 (defn warn-on-cljs-version-differences []
   (let [proj-deps  (core/get-env :dependencies)
@@ -139,7 +159,7 @@
    s source-map            bool "Create source maps for compiled JS."
    c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler."]
 
-  (let [pod-env    (-> (core/get-env) (update-in [:dependencies] into (vec (seq @deps))))
+  (let [pod-env    (-> (core/get-env) (update-in [:dependencies] into (vec (seq @deps))) (update-in [:dependencies] assert-clojure-version))
         pod        (future (pod/make-pod pod-env))
         tmp-src    (core/temp-dir!)
         tmp-out    (core/temp-dir!)
