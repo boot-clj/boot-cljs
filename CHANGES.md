@@ -1,3 +1,8 @@
+## 0.0-3269-1 (23.5.2015)
+
+- Automatically add Clojure 1.7 dependency to Cljs pod if project
+is not yet using it.
+
 ## 0.0-3269-0 (17.5.2015)
 
 - **Probably breaks stuff**: Updated to latest ClojureScript compiler

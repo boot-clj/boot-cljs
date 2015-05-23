@@ -13,7 +13,7 @@
     [adzerk.boot-cljs.js-deps    :as deps]))
 
 (def cljs-version "0.0-3269")
-(def clj-version "1.7.0-beta3")
+(def clj-version "1.7.0-RC1")
 
 (def ^:private deps
   "ClojureScript dependency to load in the pod if
