@@ -118,7 +118,7 @@
   adds it to the fileset if none already exist. This default .cljs.edn file
   will :require all CLJS namespaces found in the fileset."
   [c context CTX edn "The cljs compiler context."]
-  (let [tmp-main (core/temp-dir!)]
+  (let [tmp-main (core/tmp-dir!)]
     (core/with-pre-wrap fileset
       (core/empty-dir! tmp-main)
       (let [{:keys [cljs main]} (deps/scan-fileset fileset)]
@@ -129,7 +129,7 @@
                 out-file  (doto (io/file tmp-main out-main) io/make-parents)]
             (info "Writing %s...\n" (.getName out-file))
             (->> cljs
-                 (mapv (comp symbol util/path->ns core/tmppath))
+                 (mapv (comp symbol util/path->ns core/tmp-path))
                  (assoc {} :require)
                  (spit out-file))
             (-> fileset (core/add-source tmp-main) core/commit!)))))))
@@ -161,9 +161,9 @@
 
   (let [pod-env    (-> (core/get-env) (update-in [:dependencies] into (vec (seq @deps))) (update-in [:dependencies] assert-clojure-version))
         pod        (future (pod/make-pod pod-env))
-        tmp-src    (core/temp-dir!)
-        tmp-out    (core/temp-dir!)
-        tmp-result (core/temp-dir!)
+        tmp-src    (core/tmp-dir!)
+        tmp-out    (core/tmp-dir!)
+        tmp-result (core/tmp-dir!)
         ctx        (initial-context tmp-out tmp-src tmp-result *opts*)]
 
     (warn-on-cljs-version-differences)
@@ -175,7 +175,7 @@
           (loop [[m & more] main, dep-order nil]
             (let [{{:keys [optimizations]} :opts :as ctx} ctx]
               (if m
-                (let [docroot   (.getParent (io/file (core/tmppath m)))
+                (let [docroot   (.getParent (io/file (core/tmp-path m)))
                       ctx       (prep-compile (prep-context m fs docroot ctx))
                       dep-order (->> (compile ctx @pod)
                                      (map #(.getPath (util/rooted-file docroot %)))

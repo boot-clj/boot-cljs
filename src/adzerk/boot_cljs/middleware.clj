@@ -36,7 +36,7 @@
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
   [{:keys [docroot tmp-src tmp-out main] :as ctx}]
-  (let [[path file] ((juxt core/tmppath core/tmpfile) main)
+  (let [[path file] ((juxt core/tmp-path core/tmp-file) main)
         base-name   (-> file .getName deps/strip-extension)
         js-path     (.getPath (io/file tmp-out (str base-name ".js")))
         cljs-path   (.getPath (io/file "boot" "cljs" (str base-name ".cljs")))
