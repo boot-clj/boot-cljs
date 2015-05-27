@@ -54,7 +54,8 @@
     (-> ctx
         (assoc-in [:opts :output-to] js-path)
         (assoc-in [:opts :main] cljs-ns)
-        (assoc-in [:opts :asset-path] asset-path)
+        ; Do not overwrite users settings
+        (update-in [:opts] #(merge {:asset-path asset-path} %))
         (update-in [:opts] (partial merge-with util/into-or-latest) (:compiler-options main-edn)))))
 
 (defn source-map
