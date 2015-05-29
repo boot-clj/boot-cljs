@@ -1,3 +1,7 @@
+## 0.0-3269-2 (30.5.2015)
+
+- Path->js fix fir cljc namespaces
+
 ## 0.0-3269-1 (23.5.2015)
 
 - Automatically add Clojure 1.7 dependency to Cljs pod if project
