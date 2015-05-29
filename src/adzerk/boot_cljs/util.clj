@@ -13,6 +13,7 @@
   [path]
   (-> path
       (.replaceAll "\\.cljs$" "")
+      (.replaceAll "\\.cljc$" "")
       (.replaceAll "[/\\\\]" ".")))
 
 (defn path->ns
