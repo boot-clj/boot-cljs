@@ -22,7 +22,7 @@
 (defn- assert-clojure-version!
   "Warn user if Clojure 1.7 is not found"
   [pod]
-  (let [[major minor] (pod/with-eval-in @pod *clojure-version*)]
+  (let [{:keys [major minor]} (pod/with-eval-in @pod *clojure-version*)]
     (when (or (< major 1) (and (= major 1) (< minor 7)))
       (warn "ClojureScript requires Clojure 1.7.\nSee https://github.com/boot-clj/boot/wiki/Setting-Clojure-version.\n"))))
 
