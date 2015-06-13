@@ -1,3 +1,17 @@
+## 0.0-3308-0 (13.6.2015)
+
+- Updated to latest ClojureScript version
+
+## 0.0-3269-4 (13.6.2015)
+
+- Instead automatically adding or updating Clojure 1.7 dependency,
+display a warning and link to [Boot wiki](https://github.com/boot-clj/boot/wiki/Setting-Clojure-version)
+page about setting the Clojure version.
+
+## 0.0-3269-3 (13.6.2015)
+
+- Broken release
+
 ## 0.0-3269-2 (30.5.2015)
 
 - Path->js fix fir cljc namespaces
