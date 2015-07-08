@@ -1,5 +1,5 @@
 (set-env!
-  :dependencies '[[org.clojure/clojure       "1.7.0-RC1"  :scope "provided"]
+  :dependencies '[[org.clojure/clojure       "1.7.0"      :scope "provided"]
                   [boot/core                 "2.0.0"      :scope "provided"]
                   [adzerk/bootlaces          "0.1.11"     :scope "test"]
                   [org.clojure/clojurescript "0.0-3308"   :scope "test"]])
