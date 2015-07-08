@@ -5,13 +5,8 @@
     [boot.kahnsort   :as kahn]
     [boot.file       :as file]
     [cljs.env        :as env]
-    [cljs.closure    :as cljs]
-    [cljs.analyzer   :as ana]))
-
-(defrecord CljsSourcePaths [paths]
-  cljs/Compilable
-  (-compile [this opts]
-    (mapcat #(cljs/-compile % opts) paths)))
+    [cljs.analyzer   :as ana]
+    [cljs.build.api  :as build]))
 
 (def ^:private stored-env (atom nil))
 
@@ -55,7 +50,7 @@
                           (swap! counter inc))))]
     (ana/with-warning-handlers handler
       (binding [env/*compiler* (cljs-env opts)]
-        (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts)
+        (build/build (apply build/inputs (filter #(.exists (io/file %)) src-paths)) opts)
         (reset! stored-env env/*compiler*)
         {:warnings  @counter
          :dep-order (dep-order @env/*compiler* opts)}))))
