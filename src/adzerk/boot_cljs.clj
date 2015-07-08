@@ -4,6 +4,7 @@
   (:require
     [clojure.java.io             :as io]
     [clojure.pprint              :as pp]
+    [clojure.string              :as string]
     [boot.pod                    :as pod]
     [boot.core                   :as core]
     [boot.file                   :as file]
@@ -112,7 +113,7 @@
         (if (seq main)
           fileset
           (let [output-to (or (get-in context [:opts :output-to]) "main.js")
-                out-main  (-> output-to (.replaceAll "\\.js$" "") deps/add-extension)
+                out-main  (-> output-to (string/replace #"\.js$" "") deps/add-extension)
                 out-file  (doto (io/file tmp-main out-main) io/make-parents)]
             (info "Writing %s...\n" (.getName out-file))
             (->> cljs

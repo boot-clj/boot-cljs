@@ -24,18 +24,21 @@
   to the :output-to compiled JS file, and in dependency order."
   [env {:keys [output-dir]}]
   (let [cljs-nses (:cljs.compiler/compiled-cljs env)
-        js-nses   (-> (fn [xs k v]
-                        (assoc xs (str output-dir "/" (:file v)) v))
-                      (reduce-kv {} (:js-dependency-index env)))
-        all-nses  (-> (fn [xs k v]
-                        (reduce #(assoc %1 (str %2) (str k)) xs (:provides v)))
-                      (reduce-kv {} (merge js-nses cljs-nses)))
-        fs-path   #(.getPath (file/relative-to (.getParentFile (io/file output-dir)) (io/file %)))]
-    (map fs-path (-> (fn [xs k v]
-                       (assoc xs k (set (keep (comp all-nses str) (:requires v)))))
-                     (reduce-kv {} cljs-nses)
-                     kahn/topo-sort
-                     reverse))))
+        js-nses   (reduce-kv (fn [xs k v]
+                               (assoc xs (str output-dir "/" (:file v)) v))
+                             {}
+                             (:js-dependency-index env))
+        all-nses  (reduce-kv (fn [xs k v]
+                               (reduce #(assoc %1 (str %2) (str k)) xs (:provides v)))
+                             {}
+                             (merge js-nses cljs-nses))]
+    (->> cljs-nses
+         (reduce-kv (fn [xs k v]
+                      (assoc xs k (set (keep (comp all-nses str) (:requires v)))))
+                    {})
+         kahn/topo-sort
+         reverse
+         (map #(.getPath (file/relative-to (.getParentFile (io/file output-dir)) (io/file %)))))))
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
@@ -46,10 +49,10 @@
   so only application entry point namespaces need to be in src-paths."
   [src-paths opts]
   (let [counter (atom 0)
-        handler (->> (fn [warning-type env & [extra]]
-                       (when (warning-type ana/*cljs-warnings*)
-                         (swap! counter inc)))
-                     (conj ana/*cljs-warning-handlers*))]
+        handler (conj ana/*cljs-warning-handlers*
+                      (fn [warning-type env & [extra]]
+                        (when (warning-type ana/*cljs-warnings*)
+                          (swap! counter inc))))]
     (ana/with-warning-handlers handler
       (binding [env/*compiler* (cljs-env opts)]
         (cljs/build (CljsSourcePaths. (filter #(.exists (io/file %)) src-paths)) opts)

@@ -1,5 +1,6 @@
 (ns adzerk.boot-cljs.js-deps
   (:require
+    [clojure.string :as string]
     [boot.core :as core]))
 
 (defn- max* [& args] (apply max (or (seq args) [0])))
@@ -13,7 +14,7 @@
 (defn strip-extension
   "Strip the .cljs.edn extension from the given main-edn-path."
   [main-edn-path]
-  (.replaceAll main-edn-path "\\.cljs\\.edn$" ""))
+  (string/replace main-edn-path #"\.cljs\.edn$" ""))
 
 (defn add-extension
   "Adds the .cljs.edn extension to the given path."
@@ -27,7 +28,7 @@
   [dep-order-meta paths]
   (let [start (->> dep-order-meta vals start-dep-order)]
     (->> paths
-         (map-indexed #(do [%2 {:dependency-order (+ start %1)}]))
+         (map-indexed (fn [a b] [b {:dependency-order (+ start a)}]))
          (into dep-order-meta))))
 
 (defn scan-fileset
@@ -35,5 +36,5 @@
   files, .main.edn files, and external JS preamble files."
   [fileset]
   (let [srcs (core/input-files fileset)]
-    {:cljs (->> srcs (core/by-ext     [".cljs" ".cljc"]) (sort-by :path))
+    {:cljs (->> srcs (core/by-ext [".cljs" ".cljc"]) (sort-by :path))
      :main (->> srcs (core/by-ext [".cljs.edn"]) (sort-by :path))}))

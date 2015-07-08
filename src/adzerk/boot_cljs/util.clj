@@ -1,5 +1,6 @@
 (ns adzerk.boot-cljs.util
   (:require
+    [clojure.string        :as string]
     [clojure.java.io       :as io]
     [boot.file             :as file]))
 
@@ -12,15 +13,14 @@
   Google Closure namespace name for goog.provide() or goog.require()."
   [path]
   (-> path
-      (.replaceAll "\\.cljs$" "")
-      (.replaceAll "\\.cljc$" "")
-      (.replaceAll "[/\\\\]" ".")))
+      (string/replace #"\.clj[s|c]$" "")
+      (string/replace #"[/\\]" ".")))
 
 (defn path->ns
   "Given a path to a CLJS namespace source file, returns the corresponding
   CLJS namespace name."
   [path]
-  (-> (path->js path) (.replaceAll "_" "-")))
+  (-> (path->js path) (string/replace #"_" "-")))
 
 (defn get-name
   [path-or-file]
