@@ -20,12 +20,22 @@
    none is provided via project"
   (delay (remove pod/dependency-loaded? `[[org.clojure/clojurescript ~cljs-version]])))
 
+(def ^:private QUALIFIERS
+  "Order map for well-known Clojure version qualifiers."
+  { "alpha"  0
+    "beta"   1
+    "rc"     2
+    ""       3})
+
 (defn- assert-clojure-version!
-  "Warn user if Clojure 1.7 is not found"
+  "Warn user if Clojure 1.7 or greater is not found"
   [pod]
-  (let [{:keys [major minor]} (pod/with-eval-in @pod *clojure-version*)]
-    (when (or (< major 1) (and (= major 1) (< minor 7)))
-      (warn "ClojureScript requires Clojure 1.7.\nSee https://github.com/boot-clj/boot/wiki/Setting-Clojure-version.\n"))))
+  (let [{:keys [major minor incremental qualifier]} (pod/with-eval-in @pod *clojure-version*)
+        [qualifier-part1 qualifier-part2] (if-let [[_ w d] (re-find #"(\w+)(\d+)" (or qualifier ""))]
+                                          [(get QUALIFIERS w) (Integer/parseInt d)]
+                                          [3 0])]
+    (when-not (>= (compare [major minor incremental qualifier-part1 qualifier-part2] [1 7 0 3 0]) 0)
+      (warn "ClojureScript requires Clojure 1.7 or greater.\nSee https://github.com/boot-clj/boot/wiki/Setting-Clojure-version.\n"))))
 
 (defn warn-on-cljs-version-differences []
   (let [proj-deps  (core/get-env :dependencies)
