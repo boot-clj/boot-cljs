@@ -22,18 +22,15 @@
 
 (def ^:private QUALIFIERS
   "Order map for well-known Clojure version qualifiers."
-  { "alpha"  0
-    "beta"   1
-    "rc"     2
-    ""       3})
+  { "alpha" 0 "beta" 1 "rc" 2 "" 3})
 
 (defn- assert-clojure-version!
   "Warn user if Clojure 1.7 or greater is not found"
   [pod]
   (let [{:keys [major minor incremental qualifier]} (pod/with-eval-in @pod *clojure-version*)
         [qualifier-part1 qualifier-part2] (if-let [[_ w d] (re-find #"(\w+)(\d+)" (or qualifier ""))]
-                                          [(get QUALIFIERS w) (Integer/parseInt d)]
-                                          [3 0])]
+                                            [(get QUALIFIERS w) (Integer/parseInt d)]
+                                            [3 0])]
     (when-not (>= (compare [major minor incremental qualifier-part1 qualifier-part2] [1 7 0 3 0]) 0)
       (warn "ClojureScript requires Clojure 1.7 or greater.\nSee https://github.com/boot-clj/boot/wiki/Setting-Clojure-version.\n"))))
 
