@@ -94,14 +94,14 @@ boot cljs -s
 
 ### Options
 
-| Option | how to set | ... |
+| Option | Description | Task option | `.cljs.edn` |
 | ---    | ---        | --- |
-| Source maps | task option: `--source-map` | |
-| Optimizations | task option: `--optimization` | |
-| Used `.cljs.edn` file | task ption: `--id` | |
-| Main ns | `.cljs.edn, :require` | |
-| Init fns | `.cljs.edn, :init-fns` | |
-| Compiler options | Task option: `--compiler-options` or `.cljs.edn` | |
+| `optimization` | `:none` (default), `:advanced` | × | |
+| `source-map` | Use source maps (default true for `:none` optimization) | × | |
+| `id` | Selected `.cljs.edn` file | × | |
+| `require` | Namespaces to require on load | | × |
+| `init-fns` | Functions to call on load | | × |
+| `compiler-options` | Cljs compiler options | × | × |
 
 The `cljs` task normally does a good job of figuring out which options to pass
 to the compiler on its own. However, options can be provided via the `-c` or

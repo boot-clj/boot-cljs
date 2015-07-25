@@ -28,16 +28,6 @@
 (defn path [& parts]
   (.getPath (apply io/file parts)))
 
-;; Boot API?
-(def ^:private ext-re #"\.[a-z\.]+$")
-(defn set-extension
-  ([filename ext]
-   (if (re-find ext-re filename)
-     (string/replace filename ext-re ext)
-     (str filename ext)))
-  ([filename old-ext ext]
-   (string/replace filename (re-pattern (str old-ext "$")) ext)))
-
 (defn main-files [fileset id]
   (let [select (if (seq id)
                  #(core/by-name [(str id ".cljs.edn")] %)

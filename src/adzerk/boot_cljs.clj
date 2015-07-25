@@ -33,32 +33,12 @@
     (if (empty? (filter (comp cljs? first) deps))
       (warn "ERROR: No ClojureScript dependency.\n"))))
 
-(defn- initial-context
-  "Create initial context object. This is the base configuration that each
-   individual compile starts with, constructed using the options provided to
-   the task constructor."
-  [tmp-out tmp-src task-options]
-  {:tmp-out    tmp-out
-   :tmp-src    tmp-src
-   :main       nil
-   :opts       (merge (:compiler-options task-options)
-                      (select-keys task-options [:optimizations :source-map]))})
-
-(defn- prep-context
-  "Add per-compile fields to the base context object."
-  [ctx main docroot]
-  (let [main-file (core/tmp-file main)]
-    (assoc ctx
-           :main (assoc (read-string (slurp main-file))
-                        :path (.getPath main-file)
-                        :id   (util/set-extension (.getName main-file) ".cljs.edn" ""))
-           :docroot docroot)))
-
-(defn- prep-compile
-  "Given a per-compile base context, applies middleware to obtain the final,
-  compiler-ready context for this build."
-  [ctx]
-  (-> ctx wrap/main wrap/source-map))
+(defn- read-cljs-edn
+  [tmp-file]
+  (let [file (core/tmp-file tmp-file)]
+    (assoc (read-string (slurp file))
+           :path (.getPath file)
+           :id   (string/replace (.getName file) #"\.cljs\.edn$" ""))))
 
 (defn- compile
   "Given a compiler context and a pod, compiles CLJS accordingly. Returns a
@@ -74,25 +54,23 @@
     (conj dep-order (-> opts :output-to util/get-name))))
 
 (core/deftask ^:private default-main
-  "Private task---given a base compiler context creates a .cljs.edn file and
-  adds it to the fileset if none already exist. This default .cljs.edn file
+  "Private task.
+
+  If no .cljs.edn exists with given id, creates one. This default .cljs.edn file
   will :require all CLJS namespaces found in the fileset."
-  [i id      ID  str ""
-   c context CTX edn "The cljs compiler context."]
+  [i id ID str ""]
   (let [tmp-main (core/tmp-dir!)]
     (core/with-pre-wrap fileset
       (core/empty-dir! tmp-main)
       (if (seq (util/main-files fileset id))
         fileset
         (let [cljs     (util/cljs-files fileset)
-              out-main (str (if (seq id)
-                               id
-                               (-> (get-in context [:opts :output-to] "main.js")
-                                   (string/replace #"\.js$" "")))
-                             ".cljs.edn")
-              out-file (doto (io/file tmp-main out-main) io/make-parents)]
+              out-main (str (or id "main") ".cljs.edn")
+              out-file (io/file tmp-main out-main)]
           (info "Writing %s...\n" (.getName out-file))
-          (spit out-file {:require (mapv (comp symbol util/path->ns core/tmp-path) cljs)})
+          (doto out-file
+            (io/make-parents)
+            (spit {:require (mapv (comp symbol util/path->ns core/tmp-path) cljs)}))
           (-> fileset (core/add-source tmp-main) core/commit!))))))
 
 (core/deftask cljs
@@ -120,21 +98,24 @@
 
   (let [pod        (future (pod/make-pod (core/get-env)))
         tmp-src    (core/tmp-dir!) ; For shim ns
-        tmp-out    (core/tmp-dir!)
-        ctx        (initial-context tmp-out tmp-src *opts*)]
+        tmp-out    (core/tmp-dir!)]
     (assert-cljs!)
     (assert-clojure-version! pod)
     (comp
-      (default-main :id id, :context ctx)
+      (default-main :id id)
       (core/with-pre-wrap fileset
         (let [cljs       (util/cljs-files fileset)
               fs         (core/input-files fileset)
               main-files (util/main-files fileset id)
               cljs-edn   (first main-files)
-              docroot    (util/tmp-file->docroot cljs-edn)
-              ctx        (-> ctx
-                             (prep-context cljs-edn docroot)
-                             (prep-compile))
+              ctx        (-> {:tmp-out tmp-out
+                              :tmp-src tmp-src
+                              :docroot (util/tmp-file->docroot cljs-edn)
+                              :main    (read-cljs-edn cljs-edn)}
+                             (wrap/compiler-options *opts*)
+                             wrap/main
+                             wrap/asset-path
+                             wrap/source-map)
               dep-order  (compile ctx @pod)]
           (when (seq (rest main-files))
             (warn "WARNING: Multiple .cljs.edn files found, you should use `id` option to select one."))
