@@ -3,10 +3,8 @@
     [clojure.java.io          :as io]
     [boot.from.backtick       :as bt]
     [clojure.string           :as string]
-    [boot.core                :as core]
-    [boot.file                :as file]
     [adzerk.boot-cljs.util    :as util]
-    [adzerk.boot-cljs.js-deps :as deps]))
+    [boot.file                :as file]))
 
 ;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -35,28 +33,28 @@
   set the compiler :output-to option accordingly. The :output-to will be derived
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
-  [{:keys [docroot tmp-src tmp-out main] :as ctx}]
-  (let [[path file] ((juxt core/tmp-path core/tmp-file) main)
-        base-name   (-> file .getName deps/strip-extension)
-        js-path     (.getPath (io/file tmp-out (str base-name ".js")))
-        cljs-path   (.getPath (io/file "boot" "cljs" (str base-name ".cljs")))
-        output-dir  (file/relative-to tmp-out (io/file (get-in ctx [:opts :output-dir])))
+  [{:keys [docroot tmp-src tmp-out cljs-edn main] :as ctx}]
+  (let [id          (:id main)
+        out-path    (util/path tmp-out docroot "out")
+        js-path     (util/path tmp-out docroot (str id ".js"))
+        cljs-path   (util/path "boot" "cljs" (str id ".cljs"))
+        output-dir  (file/relative-to tmp-out (io/file out-path))
         ; Path used by dev shim to load the files
         ; This should be relative path to output-dir
-        asset-path  (.getPath (io/file docroot output-dir))
+        asset-path  (util/path output-dir)
         cljs-file   (doto (io/file tmp-src cljs-path) io/make-parents)
         cljs-ns     (symbol (util/path->ns cljs-path))
-        main-edn    (read-string (slurp file))
-        init-fns    (:init-fns main-edn)
-        requires    (into (sorted-set) (:require main-edn))
+        init-fns    (:init-fns main)
+        requires    (into (sorted-set) (:require main))
         init-nss    (into requires (map (comp symbol namespace) init-fns))]
-    (->> (main-ns-forms cljs-ns init-nss init-fns) format-ns-forms (spit cljs-file))
+    (.mkdirs (io/file tmp-out docroot "out"))
+    (spit cljs-file
+          (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns)))
     (-> ctx
+        (assoc-in [:opts :output-dir] out-path)
         (assoc-in [:opts :output-to] js-path)
         (assoc-in [:opts :main] cljs-ns)
-        ; Do not overwrite users settings
-        (update-in [:opts] #(merge {:asset-path asset-path} %))
-        (update-in [:opts] (partial merge-with util/into-or-latest) (:compiler-options main-edn)))))
+        (update-in [:opts :asset-path] #(or % asset-path)))))
 
 (defn source-map
   "Middleware to configure source map related CLJS compiler options."

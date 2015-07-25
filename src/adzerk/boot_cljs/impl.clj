@@ -1,6 +1,5 @@
 (ns adzerk.boot-cljs.impl
   (:require
-    [clojure.pprint  :refer [pprint]]
     [clojure.java.io :as io]
     [boot.kahnsort   :as kahn]
     [boot.file       :as file]
@@ -42,7 +41,7 @@
   Note: The files in src-paths are only the entry point for the compiler. Any
   namespaces :require'd in those files will be retrieved from the class path,
   so only application entry point namespaces need to be in src-paths."
-  [src-paths opts]
+  [input-path opts]
   (let [counter (atom 0)
         handler (conj ana/*cljs-warning-handlers*
                       (fn [warning-type env & [extra]]
@@ -50,7 +49,7 @@
                           (swap! counter inc))))]
     (ana/with-warning-handlers handler
       (binding [env/*compiler* (cljs-env opts)]
-        (build/build (apply build/inputs (filter #(.exists (io/file %)) src-paths)) opts)
+        (build/build (build/inputs input-path) opts)
         (reset! stored-env env/*compiler*)
         {:warnings  @counter
          :dep-order (dep-order @env/*compiler* opts)}))))
