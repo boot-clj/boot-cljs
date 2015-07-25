@@ -2,26 +2,25 @@
   (:require [boot.file :as file]
             [boot.kahnsort :as kahn]
             [cljs.analyzer :as ana]
-            [cljs.build.api :as build]
-            [cljs.env :as env]
+            [cljs.build.api :refer [build inputs]]
+            [cljs.env :refer [default-compiler-env]]
             [clojure.java.io :as io]))
 
-(def ^:private stored-env (atom nil))
-
-(defn cljs-env [opts]
-  (compare-and-set! stored-env nil (env/default-compiler-env opts))
-  @stored-env)
+; Because this ns is loaded in pod, it's private to one cljs task.
+; Compiler env is a atom.
+; FIXME: In future, this will be available as cljs.analyzer.api/empty-state
+(def ^:private stored-env (default-compiler-env))
 
 (defn dep-order
   "Returns a seq of paths for all js files created by CLJS compiler, relative
   to the :output-to compiled JS file, and in dependency order."
   [env {:keys [output-dir]}]
   ; FIXME: Uses cljs compiler private data
-  (let [cljs-nses (:cljs.compiler/compiled-cljs env)
+  (let [cljs-nses (:cljs.compiler/compiled-cljs @env)
         js-nses   (reduce-kv (fn [xs k v]
                                (assoc xs (str output-dir "/" (:file v)) v))
                              {}
-                             (:js-dependency-index env))
+                             (:js-dependency-index @env))
         all-nses  (reduce-kv (fn [xs k v]
                                (reduce #(assoc %1 (str %2) (str k)) xs (:provides v)))
                              {}
@@ -48,8 +47,6 @@
                         (when (warning-type ana/*cljs-warnings*)
                           (swap! counter inc))))]
     (ana/with-warning-handlers handler
-      (binding [env/*compiler* (cljs-env opts)]
-        (build/build (build/inputs input-path) opts)
-        (reset! stored-env env/*compiler*)
-        {:warnings  @counter
-         :dep-order (dep-order @env/*compiler* opts)}))))
+      (build (inputs input-path) opts stored-env)
+      {:warnings  @counter
+       :dep-order (dep-order stored-env opts)})))
