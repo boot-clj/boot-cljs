@@ -1,17 +1,16 @@
 (ns adzerk.boot-cljs
   {:boot/export-tasks true}
   (:refer-clojure :exclude [compile])
-  (:require
-    [clojure.java.io             :as io]
-    [clojure.pprint              :as pp]
-    [clojure.string              :as string]
-    [boot.pod                    :as pod]
-    [boot.core                   :as core]
-    [boot.file                   :as file]
-    [boot.util                   :refer [info dbug warn]]
-    [adzerk.boot-cljs.util       :as util]
-    [adzerk.boot-cljs.middleware :as wrap]
-    [adzerk.boot-cljs.js-deps    :as deps]))
+  (:require [clojure.java.io             :as io]
+            [clojure.pprint              :as pp]
+            [clojure.string              :as string]
+            [boot.pod                    :as pod]
+            [boot.core                   :as core]
+            [boot.file                   :as file]
+            [boot.util                   :refer [info dbug warn]]
+            [adzerk.boot-cljs.util       :as util]
+            [adzerk.boot-cljs.middleware :as wrap]
+            [adzerk.boot-cljs.js-deps    :as deps]))
 
 (def ^:private QUALIFIERS
   "Order map for well-known Clojure version qualifiers."

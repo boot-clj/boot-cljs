@@ -1,11 +1,10 @@
 (ns adzerk.boot-cljs.impl
-  (:require
-    [clojure.java.io :as io]
-    [boot.kahnsort   :as kahn]
-    [boot.file       :as file]
-    [cljs.env        :as env]
-    [cljs.analyzer   :as ana]
-    [cljs.build.api  :as build]))
+  (:require [boot.file :as file]
+            [boot.kahnsort :as kahn]
+            [cljs.analyzer :as ana]
+            [cljs.build.api :as build]
+            [cljs.env :as env]
+            [clojure.java.io :as io]))
 
 (def ^:private stored-env (atom nil))
 

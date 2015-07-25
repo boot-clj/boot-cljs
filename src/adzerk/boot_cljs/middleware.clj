@@ -1,10 +1,8 @@
 (ns adzerk.boot-cljs.middleware
-  (:require
-    [clojure.java.io          :as io]
-    [boot.from.backtick       :as bt]
-    [clojure.string           :as string]
-    [adzerk.boot-cljs.util    :as util]
-    [boot.file                :as file]))
+  (:require [adzerk.boot-cljs.util :as util]
+            [boot.file :as file]
+            [clojure.java.io :as io]
+            [clojure.string :as string]))
 
 ;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
