@@ -16,6 +16,7 @@
   "Returns a seq of paths for all js files created by CLJS compiler, relative
   to the :output-to compiled JS file, and in dependency order."
   [env {:keys [output-dir]}]
+  ; FIXME: Uses cljs compiler private data
   (let [cljs-nses (:cljs.compiler/compiled-cljs env)
         js-nses   (reduce-kv (fn [xs k v]
                                (assoc xs (str output-dir "/" (:file v)) v))

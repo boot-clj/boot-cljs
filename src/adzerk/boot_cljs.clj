@@ -102,9 +102,7 @@
     (comp
       (default-main :id id)
       (core/with-pre-wrap fileset
-        (let [cljs       (util/cljs-files fileset)
-              fs         (core/input-files fileset)
-              main-files (util/main-files fileset id)
+        (let [main-files (util/main-files fileset id)
               cljs-edn   (first main-files)
               ctx        (-> {:tmp-out tmp-out
                               :tmp-src tmp-src
