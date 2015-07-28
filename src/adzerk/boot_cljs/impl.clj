@@ -1,15 +1,13 @@
 (ns adzerk.boot-cljs.impl
   (:require [boot.file :as file]
             [boot.kahnsort :as kahn]
-            [cljs.analyzer :as ana]
+            [cljs.analyzer.api :refer [empty-env default-warning-handler warning-enabled?]]
             [cljs.build.api :refer [build inputs]]
-            [cljs.env :refer [default-compiler-env]]
             [clojure.java.io :as io]))
 
 ; Because this ns is loaded in pod, it's private to one cljs task.
 ; Compiler env is a atom.
-; FIXME: In future, this will be available as cljs.analyzer.api/empty-state
-(def ^:private stored-env (default-compiler-env))
+(def ^:private stored-env (empty-env))
 
 (defn dep-order
   "Returns a seq of paths for all js files created by CLJS compiler, relative
@@ -42,11 +40,12 @@
   so only application entry point namespaces need to be in src-paths."
   [input-path opts]
   (let [counter (atom 0)
-        handler (conj ana/*cljs-warning-handlers*
-                      (fn [warning-type env & [extra]]
-                        (when (warning-type ana/*cljs-warnings*)
-                          (swap! counter inc))))]
-    (ana/with-warning-handlers handler
-      (build (inputs input-path) opts stored-env)
-      {:warnings  @counter
-       :dep-order (dep-order stored-env opts)})))
+        handler (fn [warning-type env extra]
+                  (when (warning-enabled? warning-type)
+                    (swap! counter inc)))]
+    (build
+      (inputs input-path)
+      (assoc opts :warning-handlers [default-warning-handler handler])
+      stored-env)
+    {:warnings  @counter
+     :dep-order (dep-order stored-env opts)}))
