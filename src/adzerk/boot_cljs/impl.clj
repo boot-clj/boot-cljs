@@ -1,13 +1,13 @@
 (ns adzerk.boot-cljs.impl
   (:require [boot.file :as file]
             [boot.kahnsort :as kahn]
-            [cljs.analyzer.api :refer [empty-env default-warning-handler warning-enabled?]]
+            [cljs.analyzer.api :refer [empty-state default-warning-handler warning-enabled?]]
             [cljs.build.api :refer [build inputs]]
             [clojure.java.io :as io]))
 
 ; Because this ns is loaded in pod, it's private to one cljs task.
 ; Compiler env is a atom.
-(def ^:private stored-env (empty-env))
+(def ^:private stored-env (empty-state))
 
 (defn dep-order
   "Returns a seq of paths for all js files created by CLJS compiler, relative
