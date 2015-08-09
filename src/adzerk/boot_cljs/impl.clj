@@ -59,6 +59,7 @@
   (when (nil? @tracker)
     (reset! tracker (ns-tracker (vec dirs))))
   ; Reload only namespaces which are already loaded
+  ; As opposed to :reload-all, ns-tracker only reloads namespaces which are really changed.
   (doseq [s (filter find-ns (@tracker))]
     (dbug "Reload macro ns: %s\n" s)
     (require s :reload)))

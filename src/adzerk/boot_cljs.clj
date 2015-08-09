@@ -87,6 +87,8 @@
 (defn tmp-file->docroot [tmp-file]
   (or (.getParent (io/file (core/tmp-path tmp-file))) ""))
 
+(def deps '[ns-tracker "0.3.0"])
+
 (core/deftask cljs
   "Compile ClojureScript applications.
 
@@ -110,7 +112,7 @@
    s source-map            bool "Create source maps for compiled JS."
    c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler."]
 
-  (let [pod        (future (pod/make-pod (update-in (core/get-env) [:dependencies] conj '[ns-tracker "0.3.0"])))
+  (let [pod        (future (pod/make-pod (update-in (core/get-env) [:dependencies] conj deps)))
         tmp-src    (core/tmp-dir!) ; For shim ns
         tmp-out    (core/tmp-dir!)
         prev       (atom nil)]
