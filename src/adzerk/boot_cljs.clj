@@ -6,6 +6,7 @@
             [adzerk.boot-cljs.util :as util]
             [boot.core :as core]
             [boot.pod :as pod]
+            [boot.file :as file]
             [boot.util :refer [dbug info warn]]
             [clojure.java.io :as io]
             [clojure.pprint :as pp]
@@ -27,7 +28,7 @@
 (defn- assert-clojure-version!
   "Warn user if Clojure 1.7 or greater is not found"
   [pod]
-  (let [{:keys [major minor incremental qualifier]} (pod/with-eval-in @pod *clojure-version*)
+  (let [{:keys [major minor incremental qualifier]} (pod/with-eval-in pod *clojure-version*)
         [qualifier-part1 qualifier-part2] (if-let [[_ w d] (re-find #"(\w+)(\d+)" (or qualifier ""))]
                                             [(get QUALIFIERS w) (Integer/parseInt d)]
                                             [3 0])]
@@ -51,10 +52,12 @@
 
 (defn- read-cljs-edn
   [tmp-file]
-  (let [file (core/tmp-file tmp-file)]
+  (let [file (core/tmp-file tmp-file)
+        path (core/tmp-path tmp-file)]
     (assoc (read-string (slurp file))
-           :path (.getPath file)
-           :id   (string/replace (.getName file) #"\.cljs\.edn$" ""))))
+           :path     (.getPath file)
+           :rel-path path
+           :id       (string/replace (.getName file) #"\.cljs\.edn$" ""))))
 
 (defn- compile
   "Given a compiler context and a pod, compiles CLJS accordingly. Returns a
@@ -100,6 +103,31 @@
           select
           (sort-by :path)))))
 
+(defn new-pod! []
+  (let [env (update-in (core/get-env) [:dependencies] into @deps)]
+    (future (doto (pod/make-pod env) assert-clojure-version!))))
+
+(defn make-compiler
+  [tmp-result cljs-edn]
+  {:pod         (new-pod!)
+   :initial-ctx {:tmp-src (core/tmp-dir!)
+                 :tmp-out tmp-result
+                 :main    (-> (read-cljs-edn cljs-edn)
+                              (assoc :ns-name (name (gensym "main"))))}})
+
+(defn compile-1
+  [compilers task-opts tmp-result macro-changes {:keys [path] :as cljs-edn}]
+  (swap! compilers #(util/assoc-or % path (make-compiler tmp-result cljs-edn)))
+  (let [{:keys [pod initial-ctx]} (get @compilers path)
+        ctx (-> initial-ctx
+                (wrap/compiler-options task-opts)
+                wrap/main
+                wrap/source-map)
+        out (.getPath (file/relative-to tmp-result (-> ctx :opts :output-to)))]
+    (info "• %s\n" out)
+    (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint (:opts ctx))))
+    (future (compile ctx macro-changes @pod))))
+
 (core/deftask ^:private default-main
   "Private task.
 
@@ -119,9 +147,6 @@
             (io/make-parents)
             (spit {:require (mapv (comp symbol util/path->ns core/tmp-path) cljs)}))
           (-> fileset (core/add-source tmp-main) core/commit!))))))
-
-(defn tmp-file->docroot [tmp-file]
-  (or (.getParent (io/file (core/tmp-path tmp-file))) ""))
 
 (core/deftask cljs
   "Compile ClojureScript applications.
@@ -146,34 +171,20 @@
    s source-map            bool "Create source maps for compiled JS."
    c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler."]
 
-  (let [pod-env    (update-in (core/get-env) [:dependencies] into @deps)
-        pod        (future (pod/make-pod pod-env))
-        tmp-src    (core/tmp-dir!) ; For shim ns
-        tmp-out    (core/tmp-dir!)
+  (let [tmp-result (core/tmp-dir!)
+        compilers  (atom {})
         prev       (atom nil)]
     (assert-cljs-dependency!)
-    (assert-clojure-version! pod)
     (comp
-      (default-main :id id)
+      (default-main)
       (core/with-pre-wrap fileset
         (info "Compiling ClojureScript...\n")
-        (let [main-files (main-files fileset id)
-              cljs-edn   (first main-files)
-              diff       (fs-diff! prev fileset)
+        (let [diff          (fs-diff! prev fileset)
               macro-changes (macro-files-changed diff)
-              ctx        (-> {:tmp-out tmp-out
-                              :tmp-src tmp-src
-                              :docroot (tmp-file->docroot cljs-edn)
-                              :main    (read-cljs-edn cljs-edn)}
-                             (wrap/compiler-options *opts*)
-                             wrap/main
-                             wrap/asset-path
-                             wrap/source-map)
-              dep-order (compile ctx macro-changes @pod)]
-          (reset! prev fileset)
-          (when (seq (rest main-files))
-            (warn "WARNING: Multiple .cljs.edn files found, you should use `id` option to select one."))
+              compile       #(compile-1 compilers *opts* tmp-result macro-changes %)
+              cljs-edns     (main-files fileset id)
+              dep-orders    (mapv deref (mapv compile cljs-edns))]
           (-> fileset
-              (core/add-resource tmp-out)
-              (core/add-meta (-> fileset (deps/compiled dep-order)))
+              (core/add-resource tmp-result)
+              ;(core/add-meta (-> fileset (deps/compiled dep-order)))
               core/commit!))))))
