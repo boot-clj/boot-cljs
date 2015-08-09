@@ -11,6 +11,15 @@
             [clojure.pprint :as pp]
             [clojure.string :as string]))
 
+(def cljs-version "1.7.48")
+
+(def ^:private deps
+  "ClojureScript dependency to load in the pod if
+   none is provided via project"
+  (delay (remove pod/dependency-loaded?
+                 [['org.clojure/clojurescript cljs-version]
+                  ['ns-tracker "0.3.0"]])))
+
 (def ^:private QUALIFIERS
   "Order map for well-known Clojure version qualifiers."
   { "alpha" 0 "beta" 1 "rc" 2 "" 3})
@@ -25,11 +34,20 @@
     (when-not (>= (compare [major minor incremental qualifier-part1 qualifier-part2] [1 7 0 3 0]) 0)
       (warn "ClojureScript requires Clojure 1.7 or greater.\nSee https://github.com/boot-clj/boot/wiki/Setting-Clojure-version.\n"))))
 
-(defn- assert-cljs! []
-  (let [deps  (map :dep (pod/resolve-dependencies (core/get-env)))
-        cljs? #{'org.clojure/clojurescript}]
-    (if (empty? (filter (comp cljs? first) deps))
-      (warn "ERROR: No ClojureScript dependency.\n"))))
+(defn assert-cljs-dependency! []
+  (let [proj-deps  (core/get-env :dependencies)
+        proj-dep?  (set (map first proj-deps))
+        all-deps   (map :dep (pod/resolve-dependencies (core/get-env)))
+        trans-deps (remove #(-> % first proj-dep?) all-deps)
+        cljs?      #{'org.clojure/clojurescript}
+        find-cljs  (fn [ds] (first (filter #(-> % first cljs?) ds)))
+        trans-cljs (find-cljs trans-deps)
+        proj-cljs  (find-cljs proj-deps)]
+    (cond
+      (and proj-cljs (neg? (compare (second proj-cljs) cljs-version)))
+      (warn "WARNING: CLJS version older than boot-cljs: %s\n" (second proj-cljs))
+      (and trans-cljs (not= (second trans-cljs) cljs-version))
+      (warn "WARNING: Different CLJS version via transitive dependency: %s\n" (second trans-cljs)))))
 
 (defn- read-cljs-edn
   [tmp-file]
@@ -87,8 +105,6 @@
 (defn tmp-file->docroot [tmp-file]
   (or (.getParent (io/file (core/tmp-path tmp-file))) ""))
 
-(def deps '[ns-tracker "0.3.0"])
-
 (core/deftask cljs
   "Compile ClojureScript applications.
 
@@ -112,11 +128,12 @@
    s source-map            bool "Create source maps for compiled JS."
    c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler."]
 
-  (let [pod        (future (pod/make-pod (update-in (core/get-env) [:dependencies] conj deps)))
+  (let [pod-env    (update-in (core/get-env) [:dependencies] into @deps)
+        pod        (future (pod/make-pod pod-env))
         tmp-src    (core/tmp-dir!) ; For shim ns
         tmp-out    (core/tmp-dir!)
         prev       (atom nil)]
-    (assert-cljs!)
+    (assert-cljs-dependency!)
     (assert-clojure-version! pod)
     (comp
       (default-main :id id)

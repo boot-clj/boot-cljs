@@ -1,3 +1,8 @@
+## 1.7.48 (x.y.2015)
+
+- Support reloading macro namespaces
+- Use ClojureScript API
+
 ## 0.0-3308-0 (13.6.2015)
 
 - Updated to latest ClojureScript version
