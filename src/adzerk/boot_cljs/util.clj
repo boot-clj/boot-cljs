@@ -38,4 +38,4 @@
          (sort-by :path))))
 
 (defn tmp-file->docroot [tmp-file]
-  (.getParent (io/file (core/tmp-path tmp-file))))
+  (or (.getParent (io/file (core/tmp-path tmp-file))) ""))
