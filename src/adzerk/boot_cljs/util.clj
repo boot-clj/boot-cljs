@@ -1,12 +1,7 @@
 (ns adzerk.boot-cljs.util
-  (:require
-    [clojure.string        :as string]
-    [clojure.java.io       :as io]
-    [boot.file             :as file]))
-
-(defn into-or-latest
-  [x y]
-  (if (and (coll? x) (coll? y)) (into x y) y))
+  (:require [boot.core :as core]
+            [clojure.java.io :as io]
+            [clojure.string :as string]))
 
 (defn path->js
   "Given a path to a CLJS namespace source file, returns the corresponding
@@ -26,20 +21,21 @@
   [path-or-file]
   (-> path-or-file io/file .getName))
 
-(defn rooted-file
-  "Given a (possibly nil or empty) docroot and some path-segments, constructs a
-  file with relative path rooted at the docroot if not nil/empty or at the first
-  path segment otherwise."
-  [docroot & path-segments]
-  (apply io/file (keep identity (conj path-segments docroot))))
+(defn cljs-files
+  [fileset]
+  (->> fileset core/input-files (core/by-ext [".cljs" ".cljc"]) (sort-by :path)))
 
-(defn copy-docroot!
-  "Given a dest-dir, a relative path docroot, and some src-dirs, copies the
-  contents of src-dirs into dest-dir/docroot/."
-  [dest-dir docroot & src-dirs]
-  (doseq [d src-dirs]
-    (doseq [in (->> d io/file file-seq (filter (memfn isFile)))]
-      (let [p (.getPath (file/relative-to d in))]
-        (let [out (io/file dest-dir (rooted-file docroot p))]
-          (when-not (and (.exists out) (= (.lastModified in) (.lastModified out)))
-            (file/copy-with-lastmod in (io/file dest-dir (rooted-file docroot p)))))))))
+(defn path [& parts]
+  (.getPath (apply io/file parts)))
+
+(defn main-files [fileset id]
+  (let [select (if (seq id)
+                 #(core/by-name [(str id ".cljs.edn")] %)
+                 #(core/by-ext [".cljs.edn"] %))]
+    (->> fileset
+         core/input-files
+         select
+         (sort-by :path))))
+
+(defn tmp-file->docroot [tmp-file]
+  (or (.getParent (io/file (core/tmp-path tmp-file))) ""))

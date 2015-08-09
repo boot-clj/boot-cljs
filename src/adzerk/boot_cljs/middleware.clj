@@ -1,12 +1,9 @@
 (ns adzerk.boot-cljs.middleware
-  (:require
-    [clojure.java.io          :as io]
-    [boot.from.backtick       :as bt]
-    [clojure.string           :as string]
-    [boot.core                :as core]
-    [boot.file                :as file]
-    [adzerk.boot-cljs.util    :as util]
-    [adzerk.boot-cljs.js-deps :as deps]))
+  (:require [adzerk.boot-cljs.util :as util]
+            [boot.file :as file]
+            [boot.from.backtick :as bt]
+            [clojure.java.io :as io]
+            [clojure.string :as string]))
 
 ;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -30,33 +27,47 @@
 
 ;; middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn compiler-options
+  [{:keys [opts main] :as ctx}
+   {:keys [compiler-options] :as task-options}]
+  (assoc ctx :opts (merge (select-keys task-options [:optimizations :source-map])
+                          compiler-options
+                          (:compiler-options main))))
+
 (defn main
   "Middleware to create the CLJS namespace for the build's .cljs.edn file and
   set the compiler :output-to option accordingly. The :output-to will be derived
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
   [{:keys [docroot tmp-src tmp-out main] :as ctx}]
-  (let [[path file] ((juxt core/tmp-path core/tmp-file) main)
-        base-name   (-> file .getName deps/strip-extension)
-        js-path     (.getPath (io/file tmp-out (str base-name ".js")))
-        cljs-path   (.getPath (io/file "boot" "cljs" (str base-name ".cljs")))
-        output-dir  (file/relative-to tmp-out (io/file (get-in ctx [:opts :output-dir])))
-        ; Path used by dev shim to load the files
-        ; This should be relative path to output-dir
-        asset-path  (.getPath (io/file docroot output-dir))
-        cljs-file   (doto (io/file tmp-src cljs-path) io/make-parents)
+  (let [id          (:id main)
+        out-file    (io/file tmp-out docroot "out")
+        out-path    (.getPath out-file)
+        js-path     (util/path tmp-out docroot (str id ".js"))
+        cljs-path   (util/path "boot" "cljs" (str id ".cljs"))
+        cljs-file   (io/file tmp-src cljs-path)
         cljs-ns     (symbol (util/path->ns cljs-path))
-        main-edn    (read-string (slurp file))
-        init-fns    (:init-fns main-edn)
-        requires    (into (sorted-set) (:require main-edn))
+        init-fns    (:init-fns main)
+        requires    (into (sorted-set) (:require main))
         init-nss    (into requires (map (comp symbol namespace) init-fns))]
-    (->> (main-ns-forms cljs-ns init-nss init-fns) format-ns-forms (spit cljs-file))
+    (.mkdirs out-file)
+    (doto cljs-file
+      (io/make-parents)
+      (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns))))
     (-> ctx
+        (assoc-in [:opts :output-dir] out-path)
         (assoc-in [:opts :output-to] js-path)
-        (assoc-in [:opts :main] cljs-ns)
-        ; Do not overwrite users settings
-        (update-in [:opts] #(merge {:asset-path asset-path} %))
-        (update-in [:opts] (partial merge-with util/into-or-latest) (:compiler-options main-edn)))))
+        (assoc-in [:opts :main] cljs-ns))))
+
+(defn asset-path
+  "Sets :asset-path compiler option if it isn't already set."
+  [{:keys [opts docroot tmp-out] :as ctx}]
+  (if (:asset-path opts)
+    ctx
+    (let [out-path    (util/path tmp-out docroot "out")
+          output-dir  (file/relative-to tmp-out (io/file out-path))
+          asset-path  (util/path output-dir)]
+      (assoc-in ctx [:opts :asset-path] asset-path))))
 
 (defn source-map
   "Middleware to configure source map related CLJS compiler options."

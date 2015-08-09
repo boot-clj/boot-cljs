@@ -1,39 +1,35 @@
 (ns adzerk.boot-cljs.impl
-  (:require
-    [clojure.pprint  :refer [pprint]]
-    [clojure.java.io :as io]
-    [boot.kahnsort   :as kahn]
-    [boot.file       :as file]
-    [cljs.env        :as env]
-    [cljs.analyzer   :as ana]
-    [cljs.build.api  :as build]))
+  (:require [boot.file :as file]
+            [boot.kahnsort :as kahn]
+            [cljs.analyzer.api :as ana-api :refer [empty-state default-warning-handler warning-enabled?]]
+            [cljs.build.api :refer [build inputs target-file-for-cljs-ns]]
+            [clojure.java.io :as io]))
 
-(def ^:private stored-env (atom nil))
+; Because this ns is loaded in pod, it's private to one cljs task.
+; Compiler env is a atom.
+(def ^:private stored-env (empty-state))
 
-(defn cljs-env [opts]
-  (compare-and-set! stored-env nil (env/default-compiler-env opts))
-  @stored-env)
+(defn ns-dependencies
+  "Given a namespace as a symbol return list of namespaces required by the namespace."
+  ; ([ns] (ns-dependencies env/*compiler* ns))
+  ([state ns]
+   (vals (:requires (ana-api/find-ns state ns)))))
 
-(defn dep-order
-  "Returns a seq of paths for all js files created by CLJS compiler, relative
-  to the :output-to compiled JS file, and in dependency order."
-  [env {:keys [output-dir]}]
-  (let [cljs-nses (:cljs.compiler/compiled-cljs env)
-        js-nses   (reduce-kv (fn [xs k v]
-                               (assoc xs (str output-dir "/" (:file v)) v))
-                             {}
-                             (:js-dependency-index env))
-        all-nses  (reduce-kv (fn [xs k v]
-                               (reduce #(assoc %1 (str %2) (str k)) xs (:provides v)))
-                             {}
-                             (merge js-nses cljs-nses))]
-    (->> cljs-nses
-         (reduce-kv (fn [xs k v]
-                      (assoc xs k (set (keep (comp all-nses str) (:requires v)))))
-                    {})
-         kahn/topo-sort
-         reverse
-         (map #(.getPath (file/relative-to (.getParentFile (io/file output-dir)) (io/file %)))))))
+(defn cljs-depdendency-graph [state]
+  (let [all-ns (ana-api/all-ns state)
+        all-ns-set (set all-ns)]
+    (->> all-ns
+         (reduce (fn [acc n]
+                   (assoc acc n (->> (ns-dependencies state n)
+                                     (keep all-ns-set)
+                                     (set))))
+                 {}))))
+
+(defn dep-order [env]
+  (->> (cljs-depdendency-graph env)
+       (kahn/topo-sort)
+       reverse
+       (map #(.getPath (target-file-for-cljs-ns %)))))
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
@@ -42,15 +38,14 @@
   Note: The files in src-paths are only the entry point for the compiler. Any
   namespaces :require'd in those files will be retrieved from the class path,
   so only application entry point namespaces need to be in src-paths."
-  [src-paths opts]
+  [input-path opts]
   (let [counter (atom 0)
-        handler (conj ana/*cljs-warning-handlers*
-                      (fn [warning-type env & [extra]]
-                        (when (warning-type ana/*cljs-warnings*)
-                          (swap! counter inc))))]
-    (ana/with-warning-handlers handler
-      (binding [env/*compiler* (cljs-env opts)]
-        (build/build (apply build/inputs (filter #(.exists (io/file %)) src-paths)) opts)
-        (reset! stored-env env/*compiler*)
-        {:warnings  @counter
-         :dep-order (dep-order @env/*compiler* opts)}))))
+        handler (fn [warning-type env extra]
+                  (when (warning-enabled? warning-type)
+                    (swap! counter inc)))]
+    (build
+      (inputs input-path)
+      (assoc opts :warning-handlers [default-warning-handler handler])
+      stored-env)
+    {:warnings  @counter
+     :dep-order (dep-order stored-env)}))
