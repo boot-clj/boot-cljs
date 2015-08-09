@@ -1,9 +1,12 @@
 (ns adzerk.boot-cljs.impl
   (:require [boot.file :as file]
             [boot.kahnsort :as kahn]
+            [boot.util :refer [dbug]]
             [cljs.analyzer.api :as ana-api :refer [empty-state default-warning-handler warning-enabled?]]
-            [cljs.build.api :refer [build inputs target-file-for-cljs-ns]]
-            [clojure.java.io :as io]))
+            [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
+            [clojure.java.io :as io]
+            [adzerk.boot-cljs.util :as util]
+            [ns-tracker.core :refer [ns-tracker]]))
 
 ; Because this ns is loaded in pod, it's private to one cljs task.
 ; Compiler env is a atom.
@@ -49,3 +52,25 @@
       stored-env)
     {:warnings  @counter
      :dep-order (dep-order stored-env)}))
+
+(def tracker (atom nil))
+
+(defn reload-macros! [dirs]
+  (when (nil? @tracker)
+    (reset! tracker (ns-tracker (vec dirs))))
+  ; Reload only namespaces which are already loaded
+  (doseq [s (filter find-ns (@tracker))]
+    (dbug "Reload macro ns: %s\n" s)
+    (require s :reload)))
+
+(defn backdate-macro-dependants!
+  [output-dir changed-files]
+  (doseq [cljs-ns (->> changed-files
+                       (map (comp symbol util/path->ns))
+                       (build-api/cljs-dependents-for-macro-namespaces stored-env))]
+    ; broken
+    ; (build-api/mark-cljs-ns-for-recompile! cljs-ns output-dir)
+    (let [f (build-api/target-file-for-cljs-ns cljs-ns output-dir)]
+      (when (.exists f)
+        (dbug "Backdate macro dependant cljs ns: %s\n" cljs-ns)
+        (.setLastModified f 5000)))))
