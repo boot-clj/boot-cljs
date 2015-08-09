@@ -7,7 +7,7 @@
   Google Closure namespace name for goog.provide() or goog.require()."
   [path]
   (-> path
-      (string/replace #"\.clj[s|c]$" "")
+      (string/replace #"\.clj([s|c])?$" "")
       (string/replace #"[/\\]" ".")))
 
 (defn path->ns
