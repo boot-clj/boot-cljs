@@ -87,6 +87,8 @@
 (defn tmp-file->docroot [tmp-file]
   (or (.getParent (io/file (core/tmp-path tmp-file))) ""))
 
+(def deps '[ns-tracker "0.3.0"])
+
 (core/deftask cljs
   "Compile ClojureScript applications.
 
@@ -110,9 +112,10 @@
    s source-map            bool "Create source maps for compiled JS."
    c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler."]
 
-  (let [pod        (future (pod/make-pod (core/get-env)))
+  (let [pod        (future (pod/make-pod (update-in (core/get-env) [:dependencies] conj deps)))
         tmp-src    (core/tmp-dir!) ; For shim ns
-        tmp-out    (core/tmp-dir!)]
+        tmp-out    (core/tmp-dir!)
+        prev       (atom nil)]
     (assert-cljs!)
     (assert-clojure-version! pod)
     (comp
@@ -120,6 +123,11 @@
       (core/with-pre-wrap fileset
         (let [main-files (main-files fileset id)
               cljs-edn   (first main-files)
+              macro-changes (->> fileset
+                                 (core/fileset-diff @prev)
+                                 core/input-files
+                                 (core/by-ext [".clj" ".cljc"])
+                                 (map core/tmp-path))
               ctx        (-> {:tmp-out tmp-out
                               :tmp-src tmp-src
                               :docroot (tmp-file->docroot cljs-edn)
@@ -128,7 +136,12 @@
                              wrap/main
                              wrap/asset-path
                              wrap/source-map)
+              _ (pod/with-call-in @pod
+                  (adzerk.boot-cljs.impl/reload-macros! ~(core/get-env :directories)))
+              _ (pod/with-call-in @pod
+                  (adzerk.boot-cljs.impl/backdate-macro-dependants! ~(:output-dir (:opts ctx)) ~macro-changes))
               dep-order  (compile ctx @pod)]
+          (reset! prev fileset)
           (when (seq (rest main-files))
             (warn "WARNING: Multiple .cljs.edn files found, you should use `id` option to select one."))
           (-> fileset

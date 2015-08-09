@@ -2,7 +2,8 @@
   :dependencies '[[org.clojure/clojure       "1.7.0"      :scope "provided"]
                   [boot/core                 "2.0.0"      :scope "provided"]
                   [adzerk/bootlaces          "0.1.11"     :scope "test"]
-                  [org.clojure/clojurescript "1.7.10"     :scope "test"]])
+                  [org.clojure/clojurescript "1.7.10"     :scope "test"]
+                  [ns-tracker                "0.3.0"      :scope "test"]])
 
 (require '[adzerk.bootlaces :refer :all])
 
