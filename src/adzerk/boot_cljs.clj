@@ -51,6 +51,19 @@
     (swap! core/*warnings* + (or warnings 0))
     (conj dep-order (-> opts :output-to util/get-name))))
 
+(defn cljs-files
+  [fileset]
+  (->> fileset core/input-files (core/by-ext [".cljs" ".cljc"]) (sort-by :path)))
+
+(defn main-files [fileset id]
+  (let [select (if (seq id)
+                 #(core/by-name [(str id ".cljs.edn")] %)
+                 #(core/by-ext [".cljs.edn"] %))]
+    (->> fileset
+         core/input-files
+         select
+         (sort-by :path))))
+
 (core/deftask ^:private default-main
   "Private task.
 
@@ -60,9 +73,9 @@
   (let [tmp-main (core/tmp-dir!)]
     (core/with-pre-wrap fileset
       (core/empty-dir! tmp-main)
-      (if (seq (util/main-files fileset id))
+      (if (seq (main-files fileset id))
         fileset
-        (let [cljs     (util/cljs-files fileset)
+        (let [cljs     (cljs-files fileset)
               out-main (str (or id "main") ".cljs.edn")
               out-file (io/file tmp-main out-main)]
           (info "Writing %s...\n" (.getName out-file))
@@ -70,6 +83,9 @@
             (io/make-parents)
             (spit {:require (mapv (comp symbol util/path->ns core/tmp-path) cljs)}))
           (-> fileset (core/add-source tmp-main) core/commit!))))))
+
+(defn tmp-file->docroot [tmp-file]
+  (or (.getParent (io/file (core/tmp-path tmp-file))) ""))
 
 (core/deftask cljs
   "Compile ClojureScript applications.
@@ -102,11 +118,11 @@
     (comp
       (default-main :id id)
       (core/with-pre-wrap fileset
-        (let [main-files (util/main-files fileset id)
+        (let [main-files (main-files fileset id)
               cljs-edn   (first main-files)
               ctx        (-> {:tmp-out tmp-out
                               :tmp-src tmp-src
-                              :docroot (util/tmp-file->docroot cljs-edn)
+                              :docroot (tmp-file->docroot cljs-edn)
                               :main    (read-cljs-edn cljs-edn)}
                              (wrap/compiler-options *opts*)
                              wrap/main
