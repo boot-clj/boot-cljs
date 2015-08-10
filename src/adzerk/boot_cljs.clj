@@ -35,7 +35,7 @@
     (when-not (>= (compare [major minor incremental qualifier-part1 qualifier-part2] [1 7 0 3 0]) 0)
       (warn "ClojureScript requires Clojure 1.7 or greater.\nSee https://github.com/boot-clj/boot/wiki/Setting-Clojure-version.\n"))))
 
-(defn assert-cljs-dependency! []
+(defn- assert-cljs-dependency! []
   (let [proj-deps  (core/get-env :dependencies)
         proj-dep?  (set (map first proj-deps))
         all-deps   (map :dep (pod/resolve-dependencies (core/get-env)))
@@ -76,23 +76,23 @@
       (swap! core/*warnings* + (or warnings 0))
       (conj dep-order (-> opts :output-to util/get-name)))))
 
-(defn cljs-files
+(defn- cljs-files
   [fileset]
   (->> fileset core/input-files (core/by-ext [".cljs" ".cljc"]) (sort-by :path)))
 
-(defn fs-diff!
+(defn- fs-diff!
   [state fileset]
   (let [s @state]
     (reset! state fileset)
     (core/fileset-diff s fileset)))
 
-(defn macro-files-changed
+(defn- macro-files-changed
   [diff]
   (->> (core/input-files diff)
        (core/by-ext [".clj" ".cljc"])
        (map core/tmp-path)))
 
-(defn main-files 
+(defn- main-files 
   ([fileset]
    (main-files fileset nil))
   ([fileset id]
@@ -104,11 +104,11 @@
           select
           (sort-by :path)))))
 
-(defn new-pod! []
+(defn- new-pod! []
   (let [env (update-in (core/get-env) [:dependencies] into @deps)]
     (future (doto (pod/make-pod env) assert-clojure-version!))))
 
-(defn make-compiler
+(defn- make-compiler
   [tmp-result cljs-edn]
   {:pod         (new-pod!)
    :initial-ctx {:tmp-src (core/tmp-dir!)
@@ -116,7 +116,7 @@
                  :main    (-> (read-cljs-edn cljs-edn)
                               (assoc :ns-name (name (gensym "main"))))}})
 
-(defn compile-1
+(defn- compile-1
   [compilers task-opts tmp-result macro-changes {:keys [path] :as cljs-edn}]
   (swap! compilers #(util/assoc-or % path (make-compiler tmp-result cljs-edn)))
   (let [{:keys [pod initial-ctx]} (get @compilers path)
