@@ -25,6 +25,14 @@
   [forms]
   (->> forms (map pr-str) (string/join "\n\n") (format "%s\n")))
 
+(defn- cljs-edn-path->output-dir-path
+  [cljs-edn-path]
+  (str (.replaceAll cljs-edn-path "\\.cljs\\.edn$" "") ".out"))
+
+(defn- cljs-edn-path->js-path
+  [cljs-edn-path]
+  (str (.replaceAll cljs-edn-path "\\.cljs\\.edn$" "") ".js"))
+
 ;; middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn compiler-options
@@ -39,35 +47,27 @@
   set the compiler :output-to option accordingly. The :output-to will be derived
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
-  [{:keys [docroot tmp-src tmp-out main] :as ctx}]
-  (let [id          (:id main)
-        out-file    (io/file tmp-out docroot "out")
-        out-path    (.getPath out-file)
-        js-path     (util/path tmp-out docroot (str id ".js"))
-        cljs-path   (util/path "boot" "cljs" (str id ".cljs"))
-        cljs-file   (io/file tmp-src cljs-path)
-        cljs-ns     (symbol (util/path->ns cljs-path))
-        init-fns    (:init-fns main)
-        requires    (into (sorted-set) (:require main))
-        init-nss    (into requires (map (comp symbol namespace) init-fns))]
+  [{:keys [tmp-src tmp-out main] :as ctx}]
+  (let [out-rel-path (cljs-edn-path->output-dir-path (:rel-path main))
+        asset-path   (util/get-name out-rel-path)
+        out-file     (io/file tmp-out out-rel-path)
+        out-path     (.getPath out-file)
+        js-path      (util/path tmp-out (cljs-edn-path->js-path (:rel-path main)))
+        cljs-path    (util/path "boot" "cljs" (str (:ns-name main) ".cljs"))
+        cljs-file    (io/file tmp-src cljs-path)
+        cljs-ns      (symbol (util/path->ns cljs-path))
+        init-fns     (:init-fns main)
+        requires     (into (sorted-set) (:require main))
+        init-nss     (into requires (map (comp symbol namespace) init-fns))]
     (.mkdirs out-file)
     (doto cljs-file
       (io/make-parents)
       (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns))))
     (-> ctx
+        (update-in [:opts :asset-path] #(if % % asset-path))
         (assoc-in [:opts :output-dir] out-path)
         (assoc-in [:opts :output-to] js-path)
         (assoc-in [:opts :main] cljs-ns))))
-
-(defn asset-path
-  "Sets :asset-path compiler option if it isn't already set."
-  [{:keys [opts docroot tmp-out] :as ctx}]
-  (if (:asset-path opts)
-    ctx
-    (let [out-path    (util/path tmp-out docroot "out")
-          output-dir  (file/relative-to tmp-out (io/file out-path))
-          asset-path  (util/path output-dir)]
-      (assoc-in ctx [:opts :asset-path] asset-path))))
 
 (defn source-map
   "Middleware to configure source map related CLJS compiler options."
