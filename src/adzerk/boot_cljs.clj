@@ -34,7 +34,7 @@
     (when-not (>= (compare [major minor incremental qualifier-part1 qualifier-part2] [1 7 0 3 0]) 0)
       (warn "ClojureScript requires Clojure 1.7 or greater.\nSee https://github.com/boot-clj/boot/wiki/Setting-Clojure-version.\n"))))
 
-(defn assert-cljs-dependency! []
+(defn- assert-cljs-dependency! []
   (let [proj-deps  (core/get-env :dependencies)
         proj-dep?  (set (map first proj-deps))
         all-deps   (map :dep (pod/resolve-dependencies (core/get-env)))
@@ -60,27 +60,45 @@
   "Given a compiler context and a pod, compiles CLJS accordingly. Returns a
   seq of all compiled JS files known to the CLJS compiler in dependency order,
   as paths relative to the :output-to compiled JS file."
-  [{:keys [tmp-src tmp-out main opts] :as ctx} pod]
-  (info "Compiling %s...\n" (-> opts :output-to util/get-name))
-  (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint opts)))
-  (let [{:keys [warnings dep-order]}
-        (pod/with-call-in pod
-          (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts))]
-    (swap! core/*warnings* + (or warnings 0))
-    (conj dep-order (-> opts :output-to util/get-name))))
+  [{:keys [tmp-src tmp-out main opts] :as ctx} macro-changes pod]
+  (let [{:keys [output-dir]}  opts
+        {:keys [directories]} (core/get-env)]
+    (pod/with-call-in pod
+      (adzerk.boot-cljs.impl/reload-macros! ~directories))
+    (pod/with-call-in pod
+      (adzerk.boot-cljs.impl/backdate-macro-dependants! ~output-dir ~macro-changes))
+    (let [{:keys [warnings dep-order]}
+          (pod/with-call-in pod
+            (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts))]
+      (swap! core/*warnings* + (or warnings 0))
+      (conj dep-order (-> opts :output-to util/get-name)))))
 
-(defn cljs-files
+(defn- cljs-files
   [fileset]
   (->> fileset core/input-files (core/by-ext [".cljs" ".cljc"]) (sort-by :path)))
 
-(defn main-files [fileset id]
-  (let [select (if (seq id)
-                 #(core/by-name [(str id ".cljs.edn")] %)
-                 #(core/by-ext [".cljs.edn"] %))]
-    (->> fileset
-         core/input-files
-         select
-         (sort-by :path))))
+(defn- fs-diff!
+  [state fileset]
+  (let [s @state]
+    (reset! state fileset)
+    (core/fileset-diff s fileset)))
+
+(defn- macro-files-changed
+  [diff]
+  (->> (core/input-files diff)
+       (core/by-ext [".clj" ".cljc"])
+       (map core/tmp-path)))
+
+(defn main-files
+  ([fileset] (main-files fileset nil))
+  ([fileset id]
+   (let [select (if (seq id)
+                  #(core/by-name [(str id ".cljs.edn")] %)
+                  #(core/by-ext [".cljs.edn"] %))]
+     (->> fileset
+          core/input-files
+          select
+          (sort-by :path)))))
 
 (core/deftask ^:private default-main
   "Private task.
@@ -138,13 +156,11 @@
     (comp
       (default-main :id id)
       (core/with-pre-wrap fileset
+        (info "Compiling ClojureScript...\n")
         (let [main-files (main-files fileset id)
               cljs-edn   (first main-files)
-              macro-changes (->> fileset
-                                 (core/fileset-diff @prev)
-                                 core/input-files
-                                 (core/by-ext [".clj" ".cljc"])
-                                 (map core/tmp-path))
+              diff       (fs-diff! prev fileset)
+              macro-changes (macro-files-changed diff)
               ctx        (-> {:tmp-out tmp-out
                               :tmp-src tmp-src
                               :docroot (tmp-file->docroot cljs-edn)
@@ -153,11 +169,7 @@
                              wrap/main
                              wrap/asset-path
                              wrap/source-map)
-              _ (pod/with-call-in @pod
-                  (adzerk.boot-cljs.impl/reload-macros! ~(core/get-env :directories)))
-              _ (pod/with-call-in @pod
-                  (adzerk.boot-cljs.impl/backdate-macro-dependants! ~(:output-dir (:opts ctx)) ~macro-changes))
-              dep-order  (compile ctx @pod)]
+              dep-order (compile ctx macro-changes @pod)]
           (reset! prev fileset)
           (when (seq (rest main-files))
             (warn "WARNING: Multiple .cljs.edn files found, you should use `id` option to select one."))
