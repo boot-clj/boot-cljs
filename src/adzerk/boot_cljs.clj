@@ -59,10 +59,6 @@
            :rel-path path
            :id       (string/replace (.getName file) #"\.cljs\.edn$" ""))))
 
-(defn- merge-dep-orders
-  [dep-orders]
-  (->> dep-orders (map reverse) (apply interleave) distinct reverse))
-
 (defn- compile
   "Given a compiler context and a pod, compiles CLJS accordingly. Returns a
   seq of all compiled JS files known to the CLJS compiler in dependency order,
@@ -79,9 +75,7 @@
           (pod/with-call-in pod
             (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts))]
       (swap! core/*warnings* + (or warnings 0))
-      (-> result
-          (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))
-          (update-in [:analysis]  #(->> % (reduce-kv (fn [xs k v] (assoc xs (rel-path k) v)) {})))))))
+      (-> result (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))))))
 
 (defn- cljs-files
   [fileset]
@@ -191,10 +185,12 @@
               compile   #(compile-1 compilers *opts* tmp-result macro-changes %)
               cljs-edns (main-files fileset id)
               results   (mapv deref (mapv compile cljs-edns))
-              ;analysis  (apply merge (map :analysis results))
-              dep-order (merge-dep-orders (map :dep-order results))]
+              ;; Since each build has its own :output-dir we don't need to do
+              ;; anything special to merge dependency ordering of files across
+              ;; builds. Each :output-to js file will depend only on compiled
+              ;; namespaces in its own :output-dir, including goog/base.js etc.
+              dep-order (reduce into [] (map :dep-order results))]
           (-> fileset
               (core/add-resource tmp-result)
               (core/add-meta (deps/compiled fileset dep-order))
-              ;(core/add-meta (deps/analyzed analysis))
               core/commit!))))))
