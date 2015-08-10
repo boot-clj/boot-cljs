@@ -59,22 +59,29 @@
            :rel-path path
            :id       (string/replace (.getName file) #"\.cljs\.edn$" ""))))
 
+(defn- merge-dep-orders
+  [dep-orders]
+  (->> dep-orders (map reverse) (apply interleave) distinct reverse))
+
 (defn- compile
   "Given a compiler context and a pod, compiles CLJS accordingly. Returns a
   seq of all compiled JS files known to the CLJS compiler in dependency order,
   as paths relative to the :output-to compiled JS file."
   [{:keys [tmp-src tmp-out main opts] :as ctx} macro-changes pod]
   (let [{:keys [output-dir]}  opts
-        {:keys [directories]} (core/get-env)]
+        {:keys [directories]} (core/get-env)
+        rel-path #(.getPath (file/relative-to tmp-out %))]
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/reload-macros! ~directories))
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/backdate-macro-dependants! ~output-dir ~macro-changes))
-    (let [{:keys [warnings dep-order]}
+    (let [{:keys [warnings] :as result}
           (pod/with-call-in pod
             (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts))]
       (swap! core/*warnings* + (or warnings 0))
-      (conj dep-order (-> opts :output-to util/get-name)))))
+      (-> result
+          (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))
+          (update-in [:analysis]  #(->> % (reduce-kv (fn [xs k v] (assoc xs (rel-path k) v)) {})))))))
 
 (defn- cljs-files
   [fileset]
@@ -181,10 +188,13 @@
         (info "Compiling ClojureScript...\n")
         (let [diff          (fs-diff! prev fileset)
               macro-changes (macro-files-changed diff)
-              compile       #(compile-1 compilers *opts* tmp-result macro-changes %)
-              cljs-edns     (main-files fileset id)
-              dep-orders    (mapv deref (mapv compile cljs-edns))]
+              compile   #(compile-1 compilers *opts* tmp-result macro-changes %)
+              cljs-edns (main-files fileset id)
+              results   (mapv deref (mapv compile cljs-edns))
+              ;analysis  (apply merge (map :analysis results))
+              dep-order (merge-dep-orders (map :dep-order results))]
           (-> fileset
               (core/add-resource tmp-result)
-              ;(core/add-meta (-> fileset (deps/compiled dep-order)))
+              (core/add-meta (deps/compiled fileset dep-order))
+              ;(core/add-meta (deps/analyzed analysis))
               core/commit!))))))
