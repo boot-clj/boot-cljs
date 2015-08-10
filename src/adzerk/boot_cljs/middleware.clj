@@ -47,7 +47,7 @@
   set the compiler :output-to option accordingly. The :output-to will be derived
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
-  [{:keys [docroot tmp-src tmp-out main] :as ctx}]
+  [{:keys [tmp-src tmp-out main] :as ctx}]
   (let [out-rel-path (cljs-edn-path->output-dir-path (:rel-path main))
         asset-path   (util/get-name out-rel-path)
         out-file     (io/file tmp-out out-rel-path)
