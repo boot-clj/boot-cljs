@@ -13,9 +13,6 @@
 * Provides a mechanism by which multiple multiple JS applications can be
   compiled in the same project.
 
-* Uses ClojureScript API and should work with any ClojureScript version newer than
-  `1.7.28`. **You need to add ClojureScript dependency to your project.**
-
 ## Try It
 
 In a terminal do:
@@ -23,7 +20,7 @@ In a terminal do:
 ```bash
 mkdir src
 echo -e '(ns foop)\n(.log js/console "hello world")' > src/foop.cljs
-boot -s src -d adzerk/boot-cljs -d org.clojure/clojurescript:1.7.48 cljs
+boot -s src -d adzerk/boot-cljs cljs
 ```
 
 The compiled JavaScript will be written to `target/main.js`.
@@ -33,8 +30,7 @@ The compiled JavaScript will be written to `target/main.js`.
 Add ClojureScript and `boot-cljs` to your `build.boot` dependencies and `require` the namespace:
 
 ```clj
-(set-env! :dependencies '[[org.clojure/clojurescript "1.7.48"]
-                          [adzerk/boot-cljs "X.Y.Z" :scope "test"]])
+(set-env! :dependencies '[[adzerk/boot-cljs "X.Y.Z" :scope "test"]])
 (require '[adzerk.boot-cljs :refer :all])
 ```
 
