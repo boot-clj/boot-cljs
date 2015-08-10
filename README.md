@@ -22,8 +22,8 @@
 In a terminal do:
 
 ```bash
-mkdir src
-echo -e '(ns foop)\n(.log js/console "hello world")' > src/foop.cljs
+mkdir -p src/foop
+echo -e '(ns foop.core)\n(.log js/console "hello world")' > src/foop/core.cljs
 boot -s src -d adzerk/boot-cljs cljs
 ```
 
@@ -202,6 +202,32 @@ boot cljs -sO advanced
 
 For an example project with a local web server, CLJS REPL, and live-reload,
 check out [boot-cljs-example]!
+
+## Hacking
+
+To build the `boot-cljs` JAR and install to your local Maven repository:
+
+```
+boot build-jar
+```
+
+To run the tests:
+
+```
+boot run-tests
+```
+
+To deploy a snapshot to Clojars:
+
+```
+boot build-jar push-snapshot
+```
+
+To deploy a release to Clojars:
+
+```
+boot build-jar push-release
+```
 
 ## License
 
