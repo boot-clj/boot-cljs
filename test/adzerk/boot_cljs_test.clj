@@ -1,34 +1,26 @@
 (ns adzerk.boot-cljs-test
-  (:require [clojure.test :refer :all]
-            [adzerk.boot-cljs :refer :all]
-            [adzerk.boot-cljs.util :refer :all]
-            [boot.pod :as pod]))
+  (:require
+    [boot.pod :as pod]
+    [clojure.test :refer :all]))
 
-(deftest util-tests
-  (testing "assoc-or should short circuit"
+(def pod-env
+  '{:dependencies [[net.sourceforge.htmlunit/htmlunit "2.18"]]})
 
-    (let [state (atom 0)
-          coll  (assoc-or {:foo 0} :foo (swap! state inc))]
-      (is (= @state 0))
-      (is (= coll {:foo 0})))
+(def hunit-pod
+  (delay (doto (pod/make-pod pod-env)
+           (pod/with-eval-in
+             (import
+               [java.util.logging Logger Level]
+               [com.gargoylesoftware.htmlunit WebClient])
+             (-> (Logger/getLogger "com.gargoylesoftware")
+                 (.setLevel (Level/-OFF)))
+             (def client (WebClient.))))))
 
-    (let [state (atom 0)
-          coll  (assoc-or {:foo 0} :bar (swap! state inc))]
-      (is (= @state 1))
-      (is (= coll {:foo 0 :bar 1})))
+(defn hunit-page
+  [path]
+  (pod/with-eval-in @hunit-pod
+    (.asText (.getPage client ~(format "http://localhost:3000%s" path)))))
 
-    (let [state1 (atom 0)
-          state2 (atom 0)
-          coll   (assoc-or {:foo 0 :baz 0} :bar (swap! state1 inc) :baz (swap! state2 inc))]
-      (is (= @state1 1))
-      (is (= @state2 0))
-      (is (= coll {:foo 0 :bar 1 :baz 0})))
-
-    (let [state1 (atom 0)
-          state2 (atom 0)
-          coll   (assoc-or {:foo 0} :bar (swap! state1 inc) :baz (swap! state2 inc))]
-      (is (= @state1 1))
-      (is (= @state2 1))
-      (is (= coll {:foo 0 :bar 1 :baz 1}))))
-
-  )
+(deftest a-test
+  (testing "Compiling with .cljs.edn"
+    (is (= "test passed" (hunit-page "/demo/index.html")))))

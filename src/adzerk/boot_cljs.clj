@@ -103,11 +103,11 @@
           select
           (sort-by :path)))))
 
-(defn new-pod! []
+(defn- new-pod! []
   (let [env (update-in (core/get-env) [:dependencies] into @deps)]
     (future (doto (pod/make-pod env) assert-clojure-version!))))
 
-(defn make-compiler
+(defn- make-compiler
   [tmp-result cljs-edn]
   {:pod         (new-pod!)
    :initial-ctx {:tmp-src (core/tmp-dir!)
@@ -115,7 +115,7 @@
                  :main    (-> (read-cljs-edn cljs-edn)
                               (assoc :ns-name (name (gensym "main"))))}})
 
-(defn compile-1
+(defn- compile-1
   [compilers task-opts tmp-result macro-changes {:keys [path] :as cljs-edn}]
   (swap! compilers #(util/assoc-or % path (make-compiler tmp-result cljs-edn)))
   (let [{:keys [pod initial-ctx]} (get @compilers path)
