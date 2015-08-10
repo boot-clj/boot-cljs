@@ -17,3 +17,7 @@
     (->> paths
          (map-indexed (fn [a b] [b {:dependency-order (+ start a)}]))
          (into dep-order-meta))))
+
+(defn analyzed
+  [analysis-meta]
+  (reduce-kv (fn [xs k v] (assoc xs k {:cljs-analysis v})) {} analysis-meta))

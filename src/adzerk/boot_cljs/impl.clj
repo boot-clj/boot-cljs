@@ -28,11 +28,18 @@
                                      (set))))
                  {}))))
 
-(defn dep-order [env]
+(defn dep-order [env opts]
   (->> (cljs-depdendency-graph env)
        (kahn/topo-sort)
        reverse
-       (map #(.getPath (target-file-for-cljs-ns %)))))
+       (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))))
+
+(defn dep-info [env opts]
+  (let [out-dir (:output-dir opts)
+        all-ns  (ana-api/all-ns env)
+        find-ns #(ana-api/find-ns env %)
+        path-of #(.getPath (target-file-for-cljs-ns % out-dir))]
+    (->> all-ns (reduce #(assoc %1 (path-of %2) (find-ns %2)) {}))))
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
@@ -51,7 +58,8 @@
       (assoc opts :warning-handlers [default-warning-handler handler])
       stored-env)
     {:warnings  @counter
-     :dep-order (dep-order stored-env)}))
+     ;:analysis  (dep-info stored-env opts)
+     :dep-order (dep-order stored-env opts)}))
 
 (def tracker (atom nil))
 
