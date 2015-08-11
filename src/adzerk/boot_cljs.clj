@@ -177,7 +177,7 @@
         prev       (atom nil)]
     (assert-cljs-dependency!)
     (comp
-      (default-main)
+      (default-main :ids ids)
       (core/with-pre-wrap fileset
         (info "Compiling ClojureScript...\n")
         (let [diff          (fs-diff! prev fileset)
