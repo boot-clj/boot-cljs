@@ -2,6 +2,7 @@
   (:require [adzerk.boot-cljs.util :as util]
             [boot.file :as file]
             [boot.from.backtick :as bt]
+            [boot.util :refer [warn]]
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
@@ -42,6 +43,13 @@
                           compiler-options
                           (:compiler-options main))))
 
+(defn- set-option [ctx k newval]
+  (if (get (:opts ctx) k)
+    (do
+      (warn "You are manually overwriting Boot-cljs set option for %s, I hope you know what you are doing!" k)
+      ctx)
+    (assoc-in ctx [:opts k] newval)))
+
 (defn main
   "Middleware to create the CLJS namespace for the build's .cljs.edn file and
   set the compiler :output-to option accordingly. The :output-to will be derived
@@ -65,9 +73,9 @@
       (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns))))
     (-> ctx
         (update-in [:opts :asset-path] #(if % % asset-path))
-        (assoc-in [:opts :output-dir] out-path)
-        (assoc-in [:opts :output-to] js-path)
-        (assoc-in [:opts :main] cljs-ns))))
+        (set-option :output-dir out-path)
+        (set-option :output-to js-path)
+        (set-option :main cljs-ns))))
 
 (defn source-map
   "Middleware to configure source map related CLJS compiler options."
