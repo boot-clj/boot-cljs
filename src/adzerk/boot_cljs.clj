@@ -134,7 +134,7 @@
 
   If no .cljs.edn exists with given id, creates one. This default .cljs.edn file
   will :require all CLJS namespaces found in the fileset."
-  [i ids IDS str ""]
+  [i ids IDS #{str} ""]
   (let [tmp-main (core/tmp-dir!)]
     (core/with-pre-wrap fileset
       (core/empty-dir! tmp-main)
