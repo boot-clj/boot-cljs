@@ -2,6 +2,7 @@
 
 - Support reloading macro namespaces
 - Use ClojureScript API
+- Add `:ids` option to select used `.cljs.edn` files
 
 ## 0.0-3308-0 (13.6.2015)
 

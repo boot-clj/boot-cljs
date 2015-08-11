@@ -95,9 +95,9 @@
 
 (defn main-files
   ([fileset] (main-files fileset nil))
-  ([fileset id]
-   (let [select (if (seq id)
-                  #(core/by-name [(str id ".cljs.edn")] %)
+  ([fileset ids]
+   (let [select (if (seq ids)
+                  #(core/by-name (map (fn [x] (str x ".cljs.edn"))) %)
                   #(core/by-ext [".cljs.edn"] %))]
      (->> fileset
           core/input-files
@@ -134,14 +134,14 @@
 
   If no .cljs.edn exists with given id, creates one. This default .cljs.edn file
   will :require all CLJS namespaces found in the fileset."
-  [i id ID str ""]
+  [i ids IDS str ""]
   (let [tmp-main (core/tmp-dir!)]
     (core/with-pre-wrap fileset
       (core/empty-dir! tmp-main)
-      (if (seq (main-files fileset id))
+      (if (seq (main-files fileset ids))
         fileset
         (let [cljs     (cljs-files fileset)
-              out-main (str (or id "main") ".cljs.edn")
+              out-main (str (or (first ids) "main") ".cljs.edn")
               out-file (io/file tmp-main out-main)]
           (info "Writing %s...\n" (.getName out-file))
           (doto out-file
@@ -167,7 +167,7 @@
    be passed to the Clojurescript compiler. A full list of options can be found
    here: https://github.com/clojure/clojurescript/wiki/Compiler-Options."
 
-  [i id ID                 str  ""
+  [i ids IDS               #{str} ""
    O optimizations LEVEL   kw   "The optimization level."
    s source-map            bool "Create source maps for compiled JS."
    c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler."]
@@ -183,7 +183,7 @@
         (let [diff          (fs-diff! prev fileset)
               macro-changes (macro-files-changed diff)
               compile   #(compile-1 compilers *opts* tmp-result macro-changes %)
-              cljs-edns (main-files fileset id)
+              cljs-edns (main-files fileset ids)
               results   (mapv deref (mapv compile cljs-edns))
               ;; Since each build has its own :output-dir we don't need to do
               ;; anything special to merge dependency ordering of files across
