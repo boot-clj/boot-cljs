@@ -97,7 +97,7 @@
   ([fileset] (main-files fileset nil))
   ([fileset ids]
    (let [select (if (seq ids)
-                  #(core/by-name (map (fn [x] (str x ".cljs.edn"))) %)
+                  #(core/by-name (map (fn [x] (str x ".cljs.edn")) ids) %)
                   #(core/by-ext [".cljs.edn"] %))]
      (->> fileset
           core/input-files
@@ -177,7 +177,7 @@
         prev       (atom nil)]
     (assert-cljs-dependency!)
     (comp
-      (default-main)
+      (default-main :ids ids)
       (core/with-pre-wrap fileset
         (info "Compiling ClojureScript...\n")
         (let [diff          (fs-diff! prev fileset)
