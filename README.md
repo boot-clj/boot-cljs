@@ -135,6 +135,51 @@ boot watch speak cljs
 > **Note:** The `watch` and `speak` tasks are not part of `boot-cljs`–they're
 > built-in tasks that come with boot.
 
+### Multiple Builds
+
+The `cljs` task provides a way to specify application entry points at which it
+can point the CLJS compiler for compilation. These entry points are provided
+via files with the `.cljs.edn` extension.
+
+These files have the following structure (e.g. `js/index.cljs.edn`):
+
+```clojure
+{:require  [foo.bar baz.baf]
+ :init-fns [foo.bar/init baz.baf/doit]
+ :compiler-options {:target :nodejs}}
+```
+
+For each `.cljs.edn` file in the fileset, the `cljs` task will:
+
+* Create a CLJS namespace corresponding to the file's path, e.g. given the file
+  `foo/bar.cljs.edn` it will create the `foo.bar` CLJS namespace. This namespace
+  will `:require` any namespaces given in the `:require` key of the EDN, and
+  add a `do` expression that calls any functions in `:init-fns` at the top
+  level. These functions will be called with no arguments.
+
+* Configure compiler options according to `:compiler-options` key of the EDN,
+  if there is one.
+
+* Configure the compiler to produce compiled JS at a location derived from the
+  file's path, e.g. given the file `foo/bar.cljs.edn` the output JS file will
+  be `foo/bar.js`.
+
+* Point the CLJS compiler at the generated namespace only. This "scopes" the
+  compiler to that namespace plus any transitive dependencies via `:require`.
+
+The example above would result in the following CLJS namespace, `js/index.cljs`:
+
+```clojure
+(ns js.index
+  (:require foo.bar baz.baf))
+
+(do (foo.bar/init)
+    (baz.baf/doit))
+```
+
+The result would be compiled to `js/index.js`. This is the JS script you'd add
+to the application's HTML file via a `<script>` tag.
+
 ### Preamble and Externs Files
 
 Jars with `deps.cljs`, like the ones provided by [cljsjs][cljsjs] can
