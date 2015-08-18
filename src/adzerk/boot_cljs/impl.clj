@@ -36,18 +36,14 @@
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
-  opts, compiles the CLJS to produce JS files.
-
-  Note: The files in src-paths are only the entry point for the compiler. Any
-  namespaces :require'd in those files will be retrieved from the class path,
-  so only application entry point namespaces need to be in src-paths."
-  [input-path opts]
+  opts, compiles the CLJS to produce JS files."
+  [input-path directories opts]
   (let [counter (atom 0)
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
                     (swap! counter inc)))]
     (build
-      (inputs input-path)
+      (apply inputs input-path directories)
       (assoc opts :warning-handlers [default-warning-handler handler])
       stored-env)
     {:warnings  @counter

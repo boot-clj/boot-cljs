@@ -73,7 +73,7 @@
       (adzerk.boot-cljs.impl/backdate-macro-dependants! ~output-dir ~macro-changes))
     (let [{:keys [warnings] :as result}
           (pod/with-call-in pod
-            (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts))]
+            (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~directories ~opts))]
       (swap! core/*warnings* + (or warnings 0))
       (-> result (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))))))
 
