@@ -1,9 +1,5 @@
 # boot-cljs
 
-```clojure
-[adzerk/boot-cljs "0.0-3308-0"] ;; latest stable release
-```
-
 [](dependency)
 ```clojure
 [adzerk/boot-cljs "1.7.48-0"] ;; latest release
