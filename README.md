@@ -103,7 +103,7 @@ boot cljs -s
 | ---    | ---         | --- | --- |
 | `optimization` | `:none` (default), `:advanced` | × | |
 | `source-map` | Use source maps (default true for `:none` optimization) | × | |
-| `id` | Selected `.cljs.edn` file | × | |
+| `ids` | Selected `.cljs.edn` files | × | |
 | `require` | Namespaces to require on load | | × |
 | `init-fns` | Functions to call on load | | × |
 | `compiler-options` | Cljs compiler options | × | × |
