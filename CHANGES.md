@@ -2,7 +2,10 @@
 
 - Support reloading macro namespaces
 - Use ClojureScript API
+- Builds specified by `.cljs.edn` files are now run parallel in separated
+environments.
 - Add `:ids` option to select used `.cljs.edn` files
+- Bug fixes
 
 ## 0.0-3308-0 (13.6.2015)
 
