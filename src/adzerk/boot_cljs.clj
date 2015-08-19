@@ -118,7 +118,10 @@
 
 (defn- compile-1
   [compilers task-opts tmp-result macro-changes {:keys [path] :as cljs-edn}]
-  (swap! compilers #(util/assoc-or % path (make-compiler tmp-result cljs-edn)))
+  (swap! compilers (fn [compilers]
+                     (if (contains? compilers path)
+                       compilers
+                       (assoc compilers path (make-compiler tmp-result cljs-edn)))))
   (let [{:keys [pod initial-ctx]} (get @compilers path)
         ctx (-> initial-ctx
                 (wrap/compiler-options task-opts)
