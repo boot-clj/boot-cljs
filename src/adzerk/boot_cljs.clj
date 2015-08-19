@@ -193,9 +193,11 @@
         (info "Compiling ClojureScript...\n")
         (let [diff          (fs-diff! prev fileset)
               macro-changes (macro-files-changed diff)
-              compile   #(compile-1 compilers *opts* tmp-result macro-changes %)
               cljs-edns (main-files fileset ids)
-              results   (mapv deref (mapv compile cljs-edns))
+              ;; Force realization to start compilation
+              futures   (doall (map (partial compile-1 compilers *opts* tmp-result macro-changes) cljs-edns))
+              ;; Wait for all compilations to finish
+              results   (doall (map deref futures))
               ;; Since each build has its own :output-dir we don't need to do
               ;; anything special to merge dependency ordering of files across
               ;; builds. Each :output-to js file will depend only on compiled
