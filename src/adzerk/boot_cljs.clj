@@ -155,6 +155,14 @@
 (core/deftask cljs
   "Compile ClojureScript applications.
 
+   Multiple builds can be compiled parallel. To define builds use .cljs.edn
+   files. ID of build is the name of .cljs.edn file without the extension.
+   To compile only specific builds, use ids option to select .cljs.edn files
+   by name. Output files of build will be put below id.out folder in fileset.
+
+   If no .cljs.edn files exists, default one is created. It will depend on
+   all .cljs files in fileset.
+
    Available --optimization levels (default 'none'):
 
    * none         No optimizations. Bypass the Closure compiler completely.
