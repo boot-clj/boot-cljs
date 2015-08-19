@@ -193,7 +193,10 @@
               ;; builds. Each :output-to js file will depend only on compiled
               ;; namespaces in its own :output-dir, including goog/base.js etc.
               dep-order (reduce into [] (map :dep-order results))]
+          ;; Added as asset (output-only) files so that other cljs tasks
+          ;; don't see these as input files.
+          ;; TODO: Does this cause other problems?
           (-> fileset
-              (core/add-resource tmp-result)
+              (core/add-asset tmp-result)
               (core/add-meta (deps/compiled fileset dep-order))
               core/commit!))))))
