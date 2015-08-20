@@ -97,8 +97,9 @@
 (defn main-files
   ([fileset] (main-files fileset nil))
   ([fileset ids]
-   (let [select (if (seq ids)
-                  #(core/by-name (map (fn [x] (str x ".cljs.edn")) ids) %)
+   (let [re-pat #(re-pattern (str "^\\Q" % "\\E\\.cljs\\.edn$"))
+         select (if (seq ids)
+                  #(core/by-re (map re-pat ids) %)
                   #(core/by-ext [".cljs.edn"] %))]
      (->> fileset
           core/input-files
@@ -153,31 +154,42 @@
             (spit {:require (mapv (comp symbol util/path->ns core/tmp-path) cljs)}))
           (-> fileset (core/add-source tmp-main) core/commit!))))))
 
+(defn- remove-previous-cljs-output
+  [fileset]
+  (core/rm fileset (filter ::output (core/ls fileset))))
+
+(defn- cljs-output-meta
+  [dir]
+  (-> (file-seq dir)
+      (->> (filter #(.isFile %))
+           (map #(.getPath (file/relative-to dir %))))
+      (zipmap (repeat {::output true}))))
+
 (core/deftask cljs
   "Compile ClojureScript applications.
 
-   Multiple builds can be compiled parallel. To define builds use .cljs.edn
-   files. ID of build is the name of .cljs.edn file without the extension.
-   To compile only specific builds, use ids option to select .cljs.edn files
-   by name. Output files of build will be put below id.out folder in fileset.
+  Multiple builds can be compiled parallel. To define builds use .cljs.edn
+  files. ID of build is the name of .cljs.edn file without the extension.
+  To compile only specific builds, use ids option to select .cljs.edn files
+  by name. Output files of build will be put below id.out folder in fileset.
 
-   If no .cljs.edn files exists, default one is created. It will depend on
-   all .cljs files in fileset.
+  If no .cljs.edn files exists, default one is created. It will depend on
+  all .cljs files in fileset.
 
-   Available --optimization levels (default 'none'):
+  Available --optimization levels (default 'none'):
 
-   * none         No optimizations. Bypass the Closure compiler completely.
-   * whitespace   Remove comments, unnecessary whitespace, and punctuation.
-   * simple       Whitespace + local variable and function parameter renaming.
-   * advanced     Simple + aggressive renaming, inlining, dead code elimination.
+  * none         No optimizations. Bypass the Closure compiler completely.
+  * whitespace   Remove comments, unnecessary whitespace, and punctuation.
+  * simple       Whitespace + local variable and function parameter renaming.
+  * advanced     Simple + aggressive renaming, inlining, dead code elimination.
 
-   Source maps can be enabled via the --source-map flag. This provides what the
-   browser needs to map locations in the compiled JavaScript to the corresponding
-   locations in the original ClojureScript source files.
+  Source maps can be enabled via the --source-map flag. This provides what the
+  browser needs to map locations in the compiled JavaScript to the corresponding
+  locations in the original ClojureScript source files.
 
-   The --compiler-options option can be used to set any other options that should
-   be passed to the Clojurescript compiler. A full list of options can be found
-   here: https://github.com/clojure/clojurescript/wiki/Compiler-Options."
+  The --compiler-options option can be used to set any other options that should
+  be passed to the Clojurescript compiler. A full list of options can be found
+  here: https://github.com/clojure/clojurescript/wiki/Compiler-Options."
 
   [i ids IDS               #{str} ""
    O optimizations LEVEL   kw   "The optimization level."
@@ -192,6 +204,10 @@
       (default-main :ids ids)
       (core/with-pre-wrap fileset
         (info "Compiling ClojureScript...\n")
+        ;; If there are any output files from other instances of the cljs
+        ;; task in the pipeline we need to remove them from the classpath
+        ;; or the cljs compiler will try to use them during compilation.
+        (-> fileset remove-previous-cljs-output core/commit!)
         (let [diff          (fs-diff! prev fileset)
               macro-changes (macro-files-changed diff)
               cljs-edns (main-files fileset ids)
@@ -206,5 +222,8 @@
               dep-order (reduce into [] (map :dep-order results))]
           (-> fileset
               (core/add-resource tmp-result)
+              ;; Add metadata to mark the output of this task so subsequent
+              ;; instances of the cljs task can remove them before compiling.
+              (core/add-meta (cljs-output-meta tmp-result))
               (core/add-meta (deps/compiled fileset dep-order))
               core/commit!))))))
