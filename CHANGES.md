@@ -1,4 +1,9 @@
-## 1.7.48 (x.y.2015)
+## 1.7.48-2 (20.8.2015)
+
+- Fix Cljs version assertion
+- Add Cljs output files as resources to they'll be available in classpath
+
+## 1.7.48-1 (19.8.2015)
 
 - Support reloading macro namespaces
 - Use ClojureScript API
