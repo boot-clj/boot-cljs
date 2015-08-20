@@ -42,10 +42,11 @@
         trans-deps (remove #(-> % first proj-dep?) all-deps)
         cljs?      #{'org.clojure/clojurescript}
         find-cljs  (fn [ds] (first (filter #(-> % first cljs?) ds)))
+        parse-v    #(when % (string/split % #"\."))
         trans-cljs (find-cljs trans-deps)
         proj-cljs  (find-cljs proj-deps)]
     (cond
-      (and proj-cljs (neg? (compare (second proj-cljs) cljs-version)))
+      (and proj-cljs (pos? (compare (parse-v (second proj-cljs)) (parse-v cljs-version))))
       (warn "WARNING: CLJS version older than boot-cljs: %s\n" (second proj-cljs))
       (and trans-cljs (not= (second trans-cljs) cljs-version))
       (warn "WARNING: Different CLJS version via transitive dependency: %s\n" (second trans-cljs)))))
