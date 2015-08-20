@@ -1,6 +1,7 @@
 (ns adzerk.boot-cljs.util
   (:require [clojure.java.io :as io]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [boot.file :as file]))
 
 (defn path->js
   "Given a path to a CLJS namespace source file, returns the corresponding
@@ -22,3 +23,12 @@
 
 (defn path [& parts]
   (.getPath (apply io/file parts)))
+
+(defn find-relative-path [dirs filepath]
+  (if-let [file (io/file filepath)]
+    (let [parent (->> dirs
+                      (map io/file)
+                      (some (fn [x] (if (file/parent? x file) x))))]
+      (.getPath (if parent
+                  (file/relative-to parent file)
+                  file)))))

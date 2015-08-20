@@ -1,7 +1,7 @@
 (ns adzerk.boot-cljs.impl
   (:require [boot.file :as file]
             [boot.kahnsort :as kahn]
-            [boot.util :refer [dbug]]
+            [boot.util :refer [dbug fail]]
             [cljs.analyzer.api :as ana-api :refer [empty-state default-warning-handler warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
             [clojure.java.io :as io]
@@ -34,6 +34,17 @@
        reverse
        (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))))
 
+(defn handle-ex [e dirs]
+  (let [{:keys [type] :as ex} (ex-data (.getCause e))]
+    (cond
+      (= :reader-exception type)
+      (let [{:keys [file line column]} ex
+            msg  (some-> e (.getCause) (.getMessage))
+            path (util/find-relative-path dirs file) ]
+        (fail "ERROR: %s on file %s, line %d, column %d\n" msg path line column))
+
+      :default (throw e))))
+
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
   opts, compiles the CLJS to produce JS files."
@@ -42,10 +53,13 @@
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
                     (swap! counter inc)))]
-    (build
-      (apply inputs input-path directories)
-      (assoc opts :warning-handlers [default-warning-handler handler])
-      stored-env)
+    (try
+      (build
+        (apply inputs input-path directories)
+        (assoc opts :warning-handlers [default-warning-handler handler])
+        stored-env)
+      (catch Exception e
+        (handle-ex e directories)))
     {:warnings  @counter
      :dep-order (dep-order stored-env opts)}))
 
