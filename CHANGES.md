@@ -1,9 +1,14 @@
 ## 1.7.48-2 (20.8.2015)
 
-- Fix Cljs version assertion
-- Add Cljs output files as resources to they'll be available in classpath
+- Display reader exceptions in pretty format
+- Fix [#89](https://github.com/adzerk-oss/boot-cljs/issues/89).
 
-## 1.7.48-1 (19.8.2015)
+## 1.7.48-1 (20.8.2015)
+
+- Fix Cljs version assertion
+- Add Cljs output files as resources so they'll be available in classpath
+
+## 1.7.48-0 (20.8.2015)
 
 - Support reloading macro namespaces
 - Use ClojureScript API
