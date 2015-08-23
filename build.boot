@@ -28,5 +28,5 @@
   []
   (merge-env! :source-paths #{"test"})
   (comp (serve)
-        (cljs)
+        (cljs :optimizations :whitespace)
         (test :namespaces #{'adzerk.boot-cljs-test})))

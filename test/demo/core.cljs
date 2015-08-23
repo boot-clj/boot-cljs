@@ -1,3 +1,3 @@
 (ns demo.core)
 
-(set! (-> js/window .-document .-body .-innerText) "test passed")
+(.appendChild (.-body js/document) (.createTextNode js/document "test passed"))

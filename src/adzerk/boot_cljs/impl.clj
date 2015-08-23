@@ -1,6 +1,7 @@
 (ns adzerk.boot-cljs.impl
   (:require [boot.file :as file]
             [boot.kahnsort :as kahn]
+            [boot.pod :as pod]
             [boot.util :refer [dbug fail]]
             [cljs.analyzer.api :as ana-api :refer [empty-state default-warning-handler warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
@@ -48,8 +49,13 @@
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
   opts, compiles the CLJS to produce JS files."
-  [input-path directories opts]
-  (let [counter (atom 0)
+  [input-path {:keys [optimizations] :as opts}]
+  ;; So directories need to be passed to cljs compiler when compiling in dev
+  ;; or there are stale namespace problems with tests. However, if compiling
+  ;; with optimizations other than :none adding directories will break the
+  ;; build and defeat tree shaking and :main option.
+  (let [directories (when (#{nil :none} optimizations) (:directories pod/env))
+        counter (atom 0)
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
                     (swap! counter inc)))]
@@ -65,14 +71,15 @@
 
 (def tracker (atom nil))
 
-(defn reload-macros! [dirs]
-  (when (nil? @tracker)
-    (reset! tracker (ns-tracker (vec dirs))))
-  ; Reload only namespaces which are already loaded
-  ; As opposed to :reload-all, ns-tracker only reloads namespaces which are really changed.
-  (doseq [s (filter find-ns (@tracker))]
-    (dbug "Reload macro ns: %s\n" s)
-    (require s :reload)))
+(defn reload-macros! []
+  (let [dirs (:directories pod/env)]
+    (when (nil? @tracker)
+      (reset! tracker (ns-tracker (vec dirs))))
+    ; Reload only namespaces which are already loaded
+    ; As opposed to :reload-all, ns-tracker only reloads namespaces which are really changed.
+    (doseq [s (filter find-ns (@tracker))]
+      (dbug "Reload macro ns: %s\n" s)
+      (require s :reload))))
 
 (defn backdate-macro-dependants!
   [output-dir changed-files]

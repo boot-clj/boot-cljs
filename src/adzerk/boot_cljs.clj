@@ -66,15 +66,14 @@
   as paths relative to the :output-to compiled JS file."
   [{:keys [tmp-src tmp-out main opts] :as ctx} macro-changes pod]
   (let [{:keys [output-dir]}  opts
-        {:keys [directories]} (core/get-env)
         rel-path #(.getPath (file/relative-to tmp-out %))]
     (pod/with-call-in pod
-      (adzerk.boot-cljs.impl/reload-macros! ~directories))
+      (adzerk.boot-cljs.impl/reload-macros!))
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/backdate-macro-dependants! ~output-dir ~macro-changes))
     (let [{:keys [warnings] :as result}
           (pod/with-call-in pod
-            (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~directories ~opts))]
+            (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts))]
       (swap! core/*warnings* + (or warnings 0))
       (-> result (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))))))
 
@@ -113,26 +112,27 @@
     (future (doto (pod/make-pod env) assert-clojure-version!))))
 
 (defn- make-compiler
-  [tmp-result cljs-edn]
+  [cljs-edn]
   (let [tmp-src (core/tmp-dir!)]
     {:pod         (new-pod! tmp-src)
      :initial-ctx {:tmp-src tmp-src
-                   :tmp-out tmp-result
+                   :tmp-out (core/tmp-dir!)
                    :main    (-> (read-cljs-edn cljs-edn)
                                 (assoc :ns-name (name (gensym "main"))))}}))
 
 (defn- compile-1
-  [compilers task-opts tmp-result macro-changes {:keys [path] :as cljs-edn}]
+  [compilers task-opts macro-changes {:keys [path] :as cljs-edn}]
   (swap! compilers (fn [compilers]
                      (if (contains? compilers path)
                        compilers
-                       (assoc compilers path (make-compiler tmp-result cljs-edn)))))
+                       (assoc compilers path (make-compiler cljs-edn)))))
   (let [{:keys [pod initial-ctx]} (get @compilers path)
         ctx (-> initial-ctx
                 (wrap/compiler-options task-opts)
                 wrap/main
                 wrap/source-map)
-        out (.getPath (file/relative-to tmp-result (-> ctx :opts :output-to)))]
+        tmp (:tmp-out initial-ctx)
+        out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
     (info "• %s\n" out)
     (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint (:opts ctx))))
     (future (compile ctx macro-changes @pod))))
@@ -215,7 +215,7 @@
               macro-changes (macro-files-changed diff)
               cljs-edns (main-files fileset ids)
               ;; Force realization to start compilation
-              futures   (doall (map (partial compile-1 compilers *opts* tmp-result macro-changes) cljs-edns))
+              futures   (doall (map (partial compile-1 compilers *opts* macro-changes) cljs-edns))
               ;; Wait for all compilations to finish
               results   (doall (map deref futures))
               ;; Since each build has its own :output-dir we don't need to do
@@ -223,6 +223,9 @@
               ;; builds. Each :output-to js file will depend only on compiled
               ;; namespaces in its own :output-dir, including goog/base.js etc.
               dep-order (reduce into [] (map :dep-order results))]
+          (->> (vals @compilers)
+               (map #(get-in % [:initial-ctx :tmp-out]))
+               (apply core/sync! tmp-result))
           (-> fileset
               (core/add-resource tmp-result)
               ;; Add metadata to mark the output of this task so subsequent
