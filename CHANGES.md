@@ -1,3 +1,10 @@
+## 1.7.48-3 (24.8.2015)
+
+- Fixed advanced optimization caused by generated main namespace not being on
+classpath
+- Fixed where advanced optimization was broken with multiple builds
+[#92](https://github.com/adzerk-oss/boot-cljs/pull/92).
+
 ## 1.7.48-2 (20.8.2015)
 
 - Display reader exceptions in pretty format
