@@ -1,5 +1,6 @@
 ## 1.7.48-3 (24.8.2015)
 
+- **BREAKING**: Changed the way `:ids` option selects the files. Instead of looking only at the basename of file, it looks at the paths. E.g. to use `src/js/main.cljs.edn` use `--ids js/main` instead of just `--ids main`.
 - Fixed advanced optimization caused by generated main namespace not being on
 classpath
 - Fixed where advanced optimization was broken with multiple builds
