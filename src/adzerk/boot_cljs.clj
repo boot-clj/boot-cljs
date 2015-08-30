@@ -157,17 +157,6 @@
             (spit {:require (mapv (comp symbol util/path->ns core/tmp-path) cljs)}))
           (-> fileset (core/add-source tmp-main) core/commit!))))))
 
-(defn- remove-previous-cljs-output
-  [fileset]
-  (core/rm fileset (filter ::output (core/ls fileset))))
-
-(defn- cljs-output-meta
-  [dir]
-  (-> (file-seq dir)
-      (->> (filter #(.isFile %))
-           (map #(.getPath (file/relative-to dir %))))
-      (zipmap (repeat {::output true}))))
-
 (core/deftask cljs
   "Compile ClojureScript applications.
 
@@ -210,7 +199,6 @@
         ;; If there are any output files from other instances of the cljs
         ;; task in the pipeline we need to remove them from the classpath
         ;; or the cljs compiler will try to use them during compilation.
-        (-> fileset remove-previous-cljs-output core/commit!)
         (let [diff          (fs-diff! prev fileset)
               macro-changes (macro-files-changed diff)
               cljs-edns (main-files fileset ids)
@@ -230,6 +218,5 @@
               (core/add-resource tmp-result)
               ;; Add metadata to mark the output of this task so subsequent
               ;; instances of the cljs task can remove them before compiling.
-              (core/add-meta (cljs-output-meta tmp-result))
               (core/add-meta (deps/compiled fileset dep-order))
               core/commit!))))))

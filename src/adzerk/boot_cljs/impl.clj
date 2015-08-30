@@ -50,22 +50,17 @@
   "Given a seq of directories containing CLJS source files and compiler options
   opts, compiles the CLJS to produce JS files."
   [input-path {:keys [optimizations] :as opts}]
-  ;; So directories need to be passed to cljs compiler when compiling in dev
-  ;; or there are stale namespace problems with tests. However, if compiling
-  ;; with optimizations other than :none adding directories will break the
-  ;; build and defeat tree shaking and :main option.
-  (let [directories (when (#{nil :none} optimizations) (:directories pod/env))
-        counter (atom 0)
+  (let [counter (atom 0)
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
                     (swap! counter inc)))]
     (try
       (build
-        (apply inputs input-path directories)
+        input-path
         (assoc opts :warning-handlers [default-warning-handler handler])
         stored-env)
       (catch Exception e
-        (handle-ex e directories)))
+        (handle-ex e (:directories pod/env))))
     {:warnings  @counter
      :dep-order (dep-order stored-env opts)}))
 
