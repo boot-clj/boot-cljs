@@ -1,3 +1,11 @@
+## 1.7.48-4 (19.9.2015)
+
+- Improved ClojureScript dependency check logic
+    1. If ClojureScript dependency is specific in build.boot, use that
+    2. If no dependency is found but ClojureScript is available in classpath,
+    display a warning
+    3. If no dependency is found and ClojureScript is not available, add dependency
+
 ## 1.7.48-3 (24.8.2015)
 
 - **BREAKING**: Changed the way `:ids` option selects the files. Instead of looking only at the basename of file, it looks at the paths. E.g. to use `src/js/main.cljs.edn` use `--ids js/main` instead of just `--ids main`.
