@@ -7,19 +7,30 @@
             [boot.core :as core]
             [boot.pod :as pod]
             [boot.file :as file]
-            [boot.util :refer [dbug info warn]]
+            [boot.util :refer [dbug info warn guard]]
             [clojure.java.io :as io]
             [clojure.pprint :as pp]
             [clojure.string :as string]))
 
 (def cljs-version "1.7.48")
 
+(defn- cljs-depdendency []
+  (let [proj-deps    (core/get-env :dependencies)
+        cljs-dep?    (first (filter (comp #{'org.clojure/clojurescript} first) proj-deps))
+        cljs-exists? (guard (do (require 'cljs.build.api) true) false)]
+    (cond
+      ; org.clojure/clojurescript in project (non-transitive) deps - do nothing
+      cljs-dep?    nil
+      ; cljs.core on classpath, org.clojure/clojurescript not in project deps
+      cljs-exists? (do (warn "WARNING: No ClojureScript dependency in project dependencies but ClojureScript in classpath\n") nil)
+      ; no cljs on classpath, no project dep, add cljs dep to pod
+      :else        ['org.clojure/clojurescript cljs-version])))
+
 (def ^:private deps
   "ClojureScript dependency to load in the pod if
    none is provided via project"
-  (delay (remove pod/dependency-loaded?
-                 [['org.clojure/clojurescript cljs-version]
-                  ['ns-tracker "0.3.0"]])))
+  (delay (filter identity [(cljs-depdendency)
+                           ['ns-tracker "0.3.0"]])))
 
 (def ^:private QUALIFIERS
   "Order map for well-known Clojure version qualifiers."
@@ -34,22 +45,6 @@
                                             [3 0])]
     (when-not (>= (compare [major minor incremental qualifier-part1 qualifier-part2] [1 7 0 3 0]) 0)
       (warn "ClojureScript requires Clojure 1.7 or greater.\nSee https://github.com/boot-clj/boot/wiki/Setting-Clojure-version.\n"))))
-
-(defn- assert-cljs-dependency! []
-  (let [proj-deps  (core/get-env :dependencies)
-        proj-dep?  (set (map first proj-deps))
-        all-deps   (map :dep (pod/resolve-dependencies (core/get-env)))
-        trans-deps (remove #(-> % first proj-dep?) all-deps)
-        cljs?      #{'org.clojure/clojurescript}
-        find-cljs  (fn [ds] (first (filter #(-> % first cljs?) ds)))
-        parse-v    #(when % (string/split % #"\."))
-        trans-cljs (find-cljs trans-deps)
-        proj-cljs  (find-cljs proj-deps)]
-    (cond
-      (and proj-cljs (pos? (compare (parse-v (second proj-cljs)) (parse-v cljs-version))))
-      (warn "WARNING: CLJS version older than boot-cljs: %s\n" (second proj-cljs))
-      (and trans-cljs (not= (second trans-cljs) cljs-version))
-      (warn "WARNING: Different CLJS version via transitive dependency: %s\n" (second trans-cljs)))))
 
 (defn- read-cljs-edn
   [tmp-file]
@@ -202,7 +197,6 @@
   (let [tmp-result (core/tmp-dir!)
         compilers  (atom {})
         prev       (atom nil)]
-    (assert-cljs-dependency!)
     (comp
       (default-main :ids ids)
       (core/with-pre-wrap fileset
