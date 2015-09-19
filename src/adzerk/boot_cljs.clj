@@ -17,7 +17,7 @@
 (defn- cljs-depdendency []
   (let [proj-deps    (core/get-env :dependencies)
         cljs-dep?    (first (filter (comp #{'org.clojure/clojurescript} first) proj-deps))
-        cljs-exists? (guard (do (require 'cljs.build.api) true) false)]
+        cljs-exists? (io/resource "cljs/build/api.clj")]
     (cond
       ; org.clojure/clojurescript in project (non-transitive) deps - do nothing
       cljs-dep?    nil
