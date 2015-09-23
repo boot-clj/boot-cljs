@@ -3,6 +3,7 @@
             [boot.kahnsort :as kahn]
             [boot.pod :as pod]
             [boot.util :refer [dbug fail]]
+            [cljs.analyzer :as ana]
             [cljs.analyzer.api :as ana-api :refer [empty-state default-warning-handler warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
             [clojure.java.io :as io]
@@ -35,14 +36,16 @@
        reverse
        (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))))
 
-(defn handle-ex [e dirs]
+(defn handle-ex [e dirs report-atom]
   (let [{:keys [type] :as ex} (ex-data (.getCause e))]
     (cond
       (= :reader-exception type)
       (let [{:keys [file line column]} ex
             msg  (some-> e (.getCause) (.getMessage))
-            path (util/find-relative-path dirs file) ]
-        (fail "ERROR: %s on file %s, line %d, column %d\n" msg path line column))
+            path (util/find-relative-path dirs file)
+            exs  (format "ERROR: %s on file %s, line %d, column %d\n" msg path line column)]
+        (swap! report-atom assoc :exception exs)
+        (fail exs))
 
       :default (throw e))))
 
@@ -55,18 +58,20 @@
   ;; with optimizations other than :none adding directories will break the
   ;; build and defeat tree shaking and :main option.
   (let [directories (when (#{nil :none} optimizations) (:directories pod/env))
-        counter (atom 0)
+        messages (atom {:exception nil
+                        :warnings []})
         handler (fn [warning-type env extra]
-                  (when (warning-enabled? warning-type)
-                    (swap! counter inc)))]
+                  (let [s (ana/error-message warning-type extra)]
+                    (when (warning-enabled? warning-type)
+                      (swap! messages update :warnings conj (ana/message env s)))))]
     (try
       (build
         (apply inputs input-path directories)
         (assoc opts :warning-handlers [default-warning-handler handler])
         stored-env)
       (catch Exception e
-        (handle-ex e directories)))
-    {:warnings  @counter
+        (handle-ex e directories messages)))
+    {:messages  @messages
      :dep-order (dep-order stored-env opts)}))
 
 (def tracker (atom nil))
