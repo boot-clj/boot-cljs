@@ -44,7 +44,11 @@
             msg  (some-> e (.getCause) (.getMessage))
             path (util/find-relative-path dirs file)
             exs  (format "ERROR: %s on file %s, line %d, column %d\n" msg path line column)]
-        (swap! report-atom assoc :exception exs)
+        (swap! report-atom assoc :exception {:message exs
+                                             :type type
+                                             :file file
+                                             :line line
+                                             :column column})
         (butil/fail exs))
 
       :default (throw e))))
@@ -61,9 +65,12 @@
         messages (atom {:exception nil
                         :warnings []})
         handler (fn [warning-type env extra]
-                  (let [s (ana/error-message warning-type extra)]
-                    (when (warning-enabled? warning-type)
-                      (swap! messages update :warnings conj (ana/message env s)))))]
+                  (when (warning-enabled? warning-type)
+                    (let [s (ana/error-message warning-type extra)]
+                      (swap! messages update :warnings conj {:message s
+                                                             :file ana/*cljs-file*
+                                                             :line (:line env)
+                                                             :type warning-type}))))]
     (try
       (build
         (apply inputs input-path directories)
