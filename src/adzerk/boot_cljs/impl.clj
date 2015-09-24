@@ -36,17 +36,17 @@
        reverse
        (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))))
 
-(defn handle-ex [e dirs report-atom]
+(defn handle-ex [e source-paths dirs report-atom]
   (let [{:keys [type] :as ex} (ex-data (.getCause e))]
     (cond
       (= :reader-exception type)
       (let [{:keys [file line column]} ex
             msg  (some-> e (.getCause) (.getMessage))
-            path (util/find-relative-path dirs file)
+            path (util/find-original-path source-paths dirs file)
             exs  (format "ERROR: %s on file %s, line %d, column %d\n" msg path line column)]
         (swap! report-atom assoc :exception {:message exs
                                              :type type
-                                             :file file
+                                             :file path
                                              :line line
                                              :column column})
         (butil/fail exs))
@@ -62,13 +62,15 @@
   ;; with optimizations other than :none adding directories will break the
   ;; build and defeat tree shaking and :main option.
   (let [dirs (:directories pod/env)
+        ; Includes also some tmp-dirs passed to this pod, but shouldn't matter
+        source-paths (concat (:source-paths pod/env) (:resource-paths pod/env))
         messages (atom {:exception nil
                         :warnings []})
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
                     (let [s (ana/error-message warning-type extra)]
                       (swap! messages update :warnings conj {:message s
-                                                             :file ana/*cljs-file*
+                                                             :file (util/find-original-path source-paths dirs ana/*cljs-file*)
                                                              :line (:line env)
                                                              :type warning-type}))))]
     (try
@@ -77,7 +79,7 @@
         (assoc opts :warning-handlers [default-warning-handler handler])
         stored-env)
       (catch Exception e
-        (handle-ex e dirs messages)))
+        (handle-ex e source-paths dirs messages)))
     {:messages  @messages
      :dep-order (dep-order stored-env opts)}))
 
