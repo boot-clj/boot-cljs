@@ -2,7 +2,7 @@
   (:require [boot.file :as file]
             [boot.kahnsort :as kahn]
             [boot.pod :as pod]
-            [boot.util :refer [dbug fail]]
+            [boot.util :as butil]
             [cljs.analyzer :as ana]
             [cljs.analyzer.api :as ana-api :refer [empty-state default-warning-handler warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
@@ -45,7 +45,7 @@
             path (util/find-relative-path dirs file)
             exs  (format "ERROR: %s on file %s, line %d, column %d\n" msg path line column)]
         (swap! report-atom assoc :exception exs)
-        (fail exs))
+        (butil/fail exs))
 
       :default (throw e))))
 
@@ -83,7 +83,7 @@
     ; Reload only namespaces which are already loaded
     ; As opposed to :reload-all, ns-tracker only reloads namespaces which are really changed.
     (doseq [s (filter find-ns (@tracker))]
-      (dbug "Reload macro ns: %s\n" s)
+      (butil/dbug "Reload macro ns: %s\n" s)
       (require s :reload))))
 
 (defn backdate-macro-dependants!
@@ -95,5 +95,5 @@
     ; (build-api/mark-cljs-ns-for-recompile! cljs-ns output-dir)
     (let [f (build-api/target-file-for-cljs-ns cljs-ns output-dir)]
       (when (.exists f)
-        (dbug "Backdate macro dependant cljs ns: %s\n" cljs-ns)
+        (butil/dbug "Backdate macro dependant cljs ns: %s\n" cljs-ns)
         (.setLastModified f 5000)))))
