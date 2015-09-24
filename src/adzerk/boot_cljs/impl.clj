@@ -2,7 +2,8 @@
   (:require [boot.file :as file]
             [boot.kahnsort :as kahn]
             [boot.pod :as pod]
-            [boot.util :refer [dbug fail]]
+            [boot.util :as butil]
+            [cljs.analyzer :as ana]
             [cljs.analyzer.api :as ana-api :refer [empty-state default-warning-handler warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
             [clojure.java.io :as io]
@@ -35,14 +36,16 @@
        reverse
        (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))))
 
-(defn handle-ex [e dirs]
+(defn handle-ex [e dirs report-atom]
   (let [{:keys [type] :as ex} (ex-data (.getCause e))]
     (cond
       (= :reader-exception type)
       (let [{:keys [file line column]} ex
             msg  (some-> e (.getCause) (.getMessage))
-            path (util/find-relative-path dirs file) ]
-        (fail "ERROR: %s on file %s, line %d, column %d\n" msg path line column))
+            path (util/find-relative-path dirs file)
+            exs  (format "ERROR: %s on file %s, line %d, column %d\n" msg path line column)]
+        (swap! report-atom assoc :exception exs)
+        (butil/fail exs))
 
       :default (throw e))))
 
@@ -55,18 +58,20 @@
   ;; with optimizations other than :none adding directories will break the
   ;; build and defeat tree shaking and :main option.
   (let [directories (when (#{nil :none} optimizations) (:directories pod/env))
-        counter (atom 0)
+        messages (atom {:exception nil
+                        :warnings []})
         handler (fn [warning-type env extra]
-                  (when (warning-enabled? warning-type)
-                    (swap! counter inc)))]
+                  (let [s (ana/error-message warning-type extra)]
+                    (when (warning-enabled? warning-type)
+                      (swap! messages update :warnings conj (ana/message env s)))))]
     (try
       (build
         (apply inputs input-path directories)
         (assoc opts :warning-handlers [default-warning-handler handler])
         stored-env)
       (catch Exception e
-        (handle-ex e directories)))
-    {:warnings  @counter
+        (handle-ex e directories messages)))
+    {:messages  @messages
      :dep-order (dep-order stored-env opts)}))
 
 (def tracker (atom nil))
@@ -78,7 +83,7 @@
     ; Reload only namespaces which are already loaded
     ; As opposed to :reload-all, ns-tracker only reloads namespaces which are really changed.
     (doseq [s (filter find-ns (@tracker))]
-      (dbug "Reload macro ns: %s\n" s)
+      (butil/dbug "Reload macro ns: %s\n" s)
       (require s :reload))))
 
 (defn backdate-macro-dependants!
@@ -90,5 +95,5 @@
     ; (build-api/mark-cljs-ns-for-recompile! cljs-ns output-dir)
     (let [f (build-api/target-file-for-cljs-ns cljs-ns output-dir)]
       (when (.exists f)
-        (dbug "Backdate macro dependant cljs ns: %s\n" cljs-ns)
+        (butil/dbug "Backdate macro dependant cljs ns: %s\n" cljs-ns)
         (.setLastModified f 5000)))))

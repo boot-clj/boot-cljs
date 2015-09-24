@@ -12,7 +12,7 @@
          '[adzerk.boot-cljs   :refer [cljs]]
          '[pandeiro.boot-http :refer [serve]])
 
-(def +version+ "1.7.48-4")
+(def +version+ "1.7.48-5-SNAPSHOT")
 
 (bootlaces! +version+)
 
