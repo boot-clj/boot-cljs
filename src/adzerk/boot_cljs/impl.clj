@@ -4,7 +4,7 @@
             [boot.pod :as pod]
             [boot.util :as butil]
             [cljs.analyzer :as ana]
-            [cljs.analyzer.api :as ana-api :refer [empty-state default-warning-handler warning-enabled?]]
+            [cljs.analyzer.api :as ana-api :refer [empty-state warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
             [clojure.java.io :as io]
             [adzerk.boot-cljs.util :as util]
@@ -68,15 +68,18 @@
                         :warnings []})
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
-                    (let [s (ana/error-message warning-type extra)]
-                      (swap! messages update :warnings conj {:message s
-                                                             :file (util/find-original-path source-paths dirs ana/*cljs-file*)
-                                                             :line (:line env)
-                                                             :type warning-type}))))]
+                    (when-let [s (ana/error-message warning-type extra)]
+                      (let [path (util/find-original-path source-paths dirs ana/*cljs-file*)]
+                        (butil/warn "WARNING: %s %s\n" s (when (:line env)
+                                                           (str "at line " (:line env) " " path)))
+                        (swap! messages update :warnings conj {:message s
+                                                               :file path
+                                                               :line (:line env)
+                                                               :type warning-type})))))]
     (try
       (build
         (apply inputs input-path (if (#{nil :none} optimizations) dirs))
-        (assoc opts :warning-handlers [default-warning-handler handler])
+        (assoc opts :warning-handlers [handler])
         stored-env)
       (catch Exception e
         (handle-ex e source-paths dirs messages)))
