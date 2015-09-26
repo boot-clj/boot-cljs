@@ -1,5 +1,6 @@
 (set-env!
   :resource-paths #{"src"}
+  :source-paths #{"test"}
   :dependencies   '[[org.clojure/clojure       "1.7.0"  :scope "provided"]
                     [adzerk/bootlaces          "0.1.11" :scope "test"]
                     [adzerk/boot-test          "1.0.4"  :scope "test"]
@@ -26,7 +27,6 @@
 
 (deftask run-tests
   []
-  (merge-env! :source-paths #{"test"})
   (comp (serve)
         (cljs :optimizations :whitespace)
-        (test :namespaces #{'adzerk.boot-cljs-test})))
+        (test :namespaces #{'adzerk.boot-cljs-test 'adzerk.boot-cljs.util-test})))

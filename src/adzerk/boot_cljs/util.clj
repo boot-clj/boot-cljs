@@ -34,10 +34,11 @@
                   file)))))
 
 (defn find-original-path [source-paths dirs filepath]
-  (let [rel-path (find-relative-path dirs filepath)]
+  (if-let [rel-path (find-relative-path dirs filepath)]
     (or (some (fn [source-path]
                 (let [f (io/file source-path rel-path)]
                   (if (.exists f)
                     (.getPath f))))
               source-paths)
-        filepath)))
+        rel-path)
+    filepath))

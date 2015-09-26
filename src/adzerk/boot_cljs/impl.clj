@@ -36,6 +36,7 @@
        reverse
        (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))))
 
+
 (defn handle-ex [e source-paths dirs report-atom]
   (let [{:keys [type] :as ex} (ex-data (.getCause e))]
     (cond
@@ -49,9 +50,25 @@
                                              :file path
                                              :line line
                                              :column column})
-        (butil/fail exs))
+        (butil/fail exs)
+        (throw (Throwable. exs)))
 
-      :default (throw e))))
+      :default
+      (let [{:keys [file line column]} ex
+            msg (some-> e (.getMessage))
+            path (util/find-original-path source-paths dirs file)]
+        ; Most of these properties are probably usually empty
+        (println {:message msg
+                  :type type
+                  :file path
+                  :line line
+                  :column :column} )
+        (swap! report-atom assoc :exception {:message msg
+                                             :type type
+                                             :file path
+                                             :line line
+                                             :column :column})
+        (throw e)))))
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
