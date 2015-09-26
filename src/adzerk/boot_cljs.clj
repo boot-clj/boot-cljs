@@ -10,7 +10,8 @@
             [boot.util :refer [dbug info warn guard]]
             [clojure.java.io :as io]
             [clojure.pprint :as pp]
-            [clojure.string :as string]))
+            [clojure.string :as string])
+  (:import [java.util.concurrent ExecutionException]))
 
 (def cljs-version "1.7.48")
 
@@ -216,7 +217,10 @@
               ;; Force realization to start compilation
               futures   (doall (map (partial compile-1 compilers *opts* macro-changes) cljs-edns))
               ;; Wait for all compilations to finish
-              results   (doall (map deref futures))
+              ;; Remove unnecessary layer of cause stack added by futures
+              results   (try (doall (map deref futures))
+                             (catch ExecutionException e
+                               (throw (.getCause e))))
               ;; Since each build has its own :output-dir we don't need to do
               ;; anything special to merge dependency ordering of files across
               ;; builds. Each :output-to js file will depend only on compiled
