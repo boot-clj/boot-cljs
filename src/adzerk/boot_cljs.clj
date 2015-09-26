@@ -79,12 +79,6 @@
   [fileset]
   (->> fileset core/input-files (core/by-ext [".cljs" ".cljc"]) (sort-by :path)))
 
-(defn- fs-diff!
-  [state fileset]
-  (let [s @state]
-    (reset! state fileset)
-    (core/fileset-diff s fileset)))
-
 (defn- macro-files-changed
   [diff]
   (->> (core/input-files diff)
@@ -213,7 +207,7 @@
         ;; task in the pipeline we need to remove them from the classpath
         ;; or the cljs compiler will try to use them during compilation.
         (-> fileset remove-previous-cljs-output core/commit!)
-        (let [diff          (fs-diff! prev fileset)
+        (let [diff          (core/fileset-diff @prev fileset)
               macro-changes (macro-files-changed diff)
               cljs-edns (main-files fileset ids)
               ;; Force realization to start compilation
@@ -228,6 +222,7 @@
               ;; builds. Each :output-to js file will depend only on compiled
               ;; namespaces in its own :output-dir, including goog/base.js etc.
               dep-order (reduce into [] (map :dep-order results))]
+          (reset! prev fileset)
           (->> (vals @compilers)
                (map #(get-in % [:initial-ctx :tmp-out]))
                (apply core/sync! tmp-result))
