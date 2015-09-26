@@ -36,39 +36,32 @@
        reverse
        (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))))
 
+(defn handle-ex
+  "Rethrows an interesting exception if possible or the original exception.
 
-(defn handle-ex [e source-paths dirs report-atom]
-  (let [{:keys [type] :as ex} (ex-data (.getCause e))]
-    (cond
-      (= :reader-exception type)
-      (let [{:keys [file line column]} ex
-            msg  (some-> e (.getCause) (.getMessage))
-            path (util/find-original-path source-paths dirs file)
-            exs  (format "ERROR: %s on file %s, line %d, column %d\n" msg path line column)]
-        (swap! report-atom assoc :exception {:message exs
-                                             :type type
-                                             :file path
-                                             :line line
-                                             :column column})
-        (butil/fail exs)
-        (throw (Throwable. exs)))
+   Exception is interesting when it has either type or tag ex-data set by cljs compiler.
 
-      :default
-      (let [{:keys [file line column]} ex
-            msg (some-> e (.getMessage))
-            path (util/find-original-path source-paths dirs file)]
-        ; Most of these properties are probably usually empty
-        (println {:message msg
-                  :type type
-                  :file path
-                  :line line
-                  :column :column} )
-        (swap! report-atom assoc :exception {:message msg
-                                             :type type
-                                             :file path
-                                             :line line
-                                             :column :column})
-        (throw e)))))
+   If ex-data has file property, it is changed to contain path in original source-paths.
+   Exceptino message is rewriten to contain fixed path."
+  [e source-paths dirs]
+  (let [e (or (util/select-cause e #(or (:type (ex-data %)) (:tag (ex-data %)))) e)
+        {:keys [type tag file line column]} (ex-data e)
+        ; Get the message without location info
+        message (.getMessage (util/last-cause e))
+        path (util/find-original-path source-paths dirs file)
+        ; Add location info
+        message (cond
+                  column (format "ERROR: %s at file %s, line %d, column %d\n" message path line column)
+                  line (format "ERROR: %s at file %s, line %d\n" message path line)
+                  file (format "ERROR: %s at file %s\n" message path)
+                  :else message)]
+
+    (util/serialize-exception
+      (ex-info
+        message
+        (-> (ex-data e)
+            (cond-> path (assoc :file path)))
+        (.getCause e)))))
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
@@ -81,8 +74,7 @@
   (let [dirs (:directories pod/env)
         ; Includes also some tmp-dirs passed to this pod, but shouldn't matter
         source-paths (concat (:source-paths pod/env) (:resource-paths pod/env))
-        messages (atom {:exception nil
-                        :warnings []})
+        messages (atom {:warnings []})
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
                     (when-let [s (ana/error-message warning-type extra)]
@@ -98,10 +90,10 @@
         (apply inputs input-path (if (#{nil :none} optimizations) dirs))
         (assoc opts :warning-handlers [handler])
         stored-env)
+      {:messages  @messages
+       :dep-order (dep-order stored-env opts)}
       (catch Exception e
-        (handle-ex e source-paths dirs messages)))
-    {:messages  @messages
-     :dep-order (dep-order stored-env opts)}))
+        {:exception (handle-ex e source-paths dirs)}))))
 
 (def tracker (atom nil))
 
