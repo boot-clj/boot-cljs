@@ -113,7 +113,7 @@
                                 (assoc :ns-name (name (gensym "main"))))}}))
 
 (defn- compile-1
-  [compilers task-opts macro-changes {:keys [path] :as cljs-edn}]
+  [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn}]
   (swap! compilers (fn [compilers]
                      (if (contains? compilers path)
                        compilers
@@ -121,7 +121,7 @@
   (let [{:keys [pod initial-ctx]} (get @compilers path)
         ctx (-> initial-ctx
                 (wrap/compiler-options task-opts)
-                wrap/main
+                (wrap/main write-main?)
                 wrap/source-map)
         tmp (:tmp-out initial-ctx)
         out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
@@ -210,8 +210,12 @@
         (let [diff          (core/fileset-diff @prev fileset)
               macro-changes (macro-files-changed diff)
               cljs-edns (main-files fileset ids)
+              changed-cljs-edns (->> diff core/input-files (core/by-ext [".cljs.edn"]) set)
               ;; Force realization to start compilation
-              futures   (doall (map (partial compile-1 compilers *opts* macro-changes) cljs-edns))
+              futures   (doall (map (fn [cljs-edn]
+                                      (let [write-main?  (contains? changed-cljs-edns cljs-edn)]
+                                        (compile-1 compilers *opts* macro-changes write-main? cljs-edn)))
+                                    cljs-edns))
               ;; Wait for all compilations to finish
               ;; Remove unnecessary layer of cause stack added by futures
               results   (try (doall (map deref futures))
