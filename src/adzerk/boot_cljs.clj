@@ -85,9 +85,7 @@
        (core/by-ext [".clj" ".cljc"])
        (map core/tmp-path)))
 
-(defn main-files
-  ([fileset] (main-files fileset nil))
-  ([fileset ids]
+(defn main-files [fileset ids]
    (let [re-pat #(re-pattern (str "^\\Q" % "\\E\\.cljs\\.edn$"))
          select (if (seq ids)
                   #(core/by-re (map re-pat ids) %)
@@ -95,7 +93,7 @@
      (->> fileset
           core/input-files
           select
-          (sort-by :path)))))
+          (sort-by :path))))
 
 (defn- new-pod! [tmp-src]
   (let [env (-> (core/get-env)
