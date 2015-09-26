@@ -67,10 +67,10 @@
       (adzerk.boot-cljs.impl/reload-macros!))
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/backdate-macro-dependants! ~output-dir ~macro-changes))
-    (let [{:keys [messages exception] :as result}
+    (let [{:keys [warnings exception] :as result}
           (pod/with-call-in pod
             (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts))]
-      (swap! core/*warnings* + (or (count (:warnings messages)) 0))
+      (swap! core/*warnings* + (or (count warnings) 0))
       (when exception
         (throw (util/deserialize-exception exception)))
       (-> result (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))))))
@@ -160,10 +160,10 @@
            (map #(.getPath (file/relative-to dir %))))
       (zipmap (repeat {::output true}))))
 
-(defn- cljs-messages-meta
+(defn- cljs-warnings-meta
   [cljs-edns results]
   (zipmap (map :path cljs-edns)
-          (map (fn [r] {::messages (:messages r)}) results)))
+          (map (fn [r] {::warnings (:warnings r)}) results)))
 
 (core/deftask cljs
   "Compile ClojureScript applications.
@@ -232,9 +232,9 @@
                (apply core/sync! tmp-result))
           (-> fileset
               (core/add-resource tmp-result)
-              ;; Add messages to .cljs.edn files metadata so other tasks
+              ;; Add warnings to .cljs.edn files metadata so other tasks
               ;; can use this information and report it to users
-              (core/add-meta (cljs-messages-meta cljs-edns results))
+              (core/add-meta (cljs-warnings-meta cljs-edns results))
               ;; Add metadata to mark the output of this task so subsequent
               ;; instances of the cljs task can remove them before compiling.
               (core/add-meta (cljs-output-meta tmp-result))

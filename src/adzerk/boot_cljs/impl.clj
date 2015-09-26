@@ -74,23 +74,23 @@
   (let [dirs (:directories pod/env)
         ; Includes also some tmp-dirs passed to this pod, but shouldn't matter
         source-paths (concat (:source-paths pod/env) (:resource-paths pod/env))
-        messages (atom {:warnings []})
+        warnings (atom [])
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
                     (when-let [s (ana/error-message warning-type extra)]
                       (let [path (util/find-original-path source-paths dirs ana/*cljs-file*)]
                         (butil/warn "WARNING: %s %s\n" s (when (:line env)
                                                            (str "at line " (:line env) " " path)))
-                        (swap! messages update :warnings conj {:message s
-                                                               :file path
-                                                               :line (:line env)
-                                                               :type warning-type})))))]
+                        (swap! warnings conj {:message s
+                                              :file path
+                                              :line (:line env)
+                                              :type warning-type})))))]
     (try
       (build
         (apply inputs input-path (if (#{nil :none} optimizations) dirs))
         (assoc opts :warning-handlers [handler])
         stored-env)
-      {:messages  @messages
+      {:warnings  @warnings
        :dep-order (dep-order stored-env opts)}
       (catch Exception e
         {:exception (handle-ex e source-paths dirs)}))))
