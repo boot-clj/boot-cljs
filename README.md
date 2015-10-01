@@ -241,8 +241,10 @@ boot cljs -sO advanced
 
 ### Further Reading
 
-For an example project with a local web server, CLJS REPL, and live-reload,
+- For an example project with a local web server, CLJS REPL, and live-reload,
 check out [boot-cljs-example]!
+- [Saapas example project](https://github.com/Deraen/saapas)
+- [Tenzing project template](https://github.com/martinklepsch/tenzing)
 
 ## Hacking
 
