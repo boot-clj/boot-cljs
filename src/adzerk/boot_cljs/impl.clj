@@ -60,6 +60,7 @@
       (ex-info
         message
         (-> (ex-data e)
+            (assoc :from :boot-cljs)
             (cond-> path (assoc :file path)))
         (.getCause e)))))
 
