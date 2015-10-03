@@ -32,9 +32,7 @@
     (let [parent (->> dirs
                       (map io/file)
                       (some (fn [x] (if (file/parent? x file) x))))]
-      (.getPath (if parent
-                  (file/relative-to parent file)
-                  file)))))
+      (if parent (.getPath (file/relative-to parent file))))))
 
 (defn find-original-path [source-paths dirs filepath]
   (if-let [rel-path (find-relative-path dirs filepath)]
