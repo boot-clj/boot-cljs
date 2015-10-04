@@ -1,9 +1,11 @@
-## 1.7.48-5 (x.x.2015)
+## 1.7.48-5 (4.10.2015)
 
 - Warning messages now display file path without tmp-dir path
 - Adds information about warnings and exceptions to fileset so that
 [boot-reload](https://github.com/adzerk-oss/boot-reload) can use the
 information to display HUD.
+- Cljs exceptions are now always rethrown, this is to allow other tasks to
+catch the exceptions and to see when build failed
 
 ## 1.7.48-4 (19.9.2015)
 
