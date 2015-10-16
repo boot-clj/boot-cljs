@@ -75,10 +75,6 @@
         (throw (util/deserialize-exception exception)))
       (-> result (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))))))
 
-(defn- cljs-files
-  [fileset]
-  (->> fileset core/input-files (core/by-ext [".cljs" ".cljc"]) (sort-by :path)))
-
 (defn- macro-files-changed
   [diff]
   (->> (core/input-files diff)
@@ -138,7 +134,7 @@
       (core/empty-dir! tmp-main)
       (if (seq (main-files fileset ids))
         fileset
-        (let [cljs     (cljs-files fileset)
+        (let [cljs     (->> fileset core/input-files (core/by-ext [".cljs" ".cljc"]) (core/by-name ["deps.cljs"] true) (sort-by :path))
               out-main (str (or (first ids) "main") ".cljs.edn")
               out-file (io/file tmp-main out-main)]
           (info "Writing %s...\n" (.getName out-file))
