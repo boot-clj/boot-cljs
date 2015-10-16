@@ -97,7 +97,7 @@ boot cljs -s
 
 | Option | Description | Task option | `.cljs.edn` |
 | ---    | ---         | --- | --- |
-| `optimization` | `:none` (default), `:advanced` | × | |
+| `optimizations` | `:none` (default), `:advanced` | × | |
 | `source-map` | Use source maps (default true for `:none` optimization) | × | |
 | `ids` | Selected `.cljs.edn` files | × | |
 | `require` | Namespaces to require on load | | × |
