@@ -1,3 +1,8 @@
+## 1.7.48-6 (16.10.2015)
+
+- Fixed problem where default main (no `.cljs.edn` files) tried to compile
+`deps.cljs` files in the fileset.
+
 ## 1.7.48-5 (4.10.2015)
 
 - Warning messages now display file path without tmp-dir path
