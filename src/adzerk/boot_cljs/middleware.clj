@@ -1,7 +1,6 @@
 (ns adzerk.boot-cljs.middleware
   (:require [adzerk.boot-cljs.util :as util]
             [boot.file :as file]
-            [boot.from.backtick :as bt]
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
@@ -14,11 +13,9 @@
   :requires the namespaces in requires and calls the init-fns with no arguments
   at the top level."
   [ns-sym requires init-fns]
-  [(bt/template
-     (ns ~ns-sym
-       (:require ~@requires)))
-   (bt/template
-     (do ~@(map list init-fns)))])
+  (apply list
+         (list 'ns ns-sym (apply list :require requires))
+         (map list init-fns)))
 
 (defn- format-ns-forms
   "Given a sequence of forms, formats them nicely as a string."
