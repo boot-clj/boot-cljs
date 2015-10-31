@@ -58,7 +58,7 @@
         cljs-ns      (symbol (util/path->ns cljs-path))
         init-fns     (:init-fns main)
         requires     (into (sorted-set) (:require main))
-        init-nss     (into requires (map (comp symbol namespace) init-fns))]
+        init-nss     (into requires (->> init-fns (keep namespace) (map symbol)))]
     (when write-main?
       (.mkdirs out-file)
       (doto cljs-file
