@@ -1,3 +1,9 @@
+## 1.7.166-1 (4.11.2015)
+
+- Removed workaround related to recompile-dependents which is made unncessary
+by [CLJS-1437](https://github.com/clojure/clojurescript/commit/409d1eca4fcf776be1f7b28f759d6f36f7a83ec8).
+- Fixed source-map options when `optimizations` is not explicitly set.
+
 ## 1.7.48-6 (16.10.2015)
 
 - Fixed problem where default main (no `.cljs.edn` files) tried to compile

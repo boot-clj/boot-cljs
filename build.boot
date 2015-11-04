@@ -5,7 +5,7 @@
                     [adzerk/bootlaces          "0.1.12" :scope "test"]
                     [adzerk/boot-test          "1.0.4"  :scope "test"]
                     [pandeiro/boot-http        "0.6.3"  :scope "test"]
-                    [org.clojure/clojurescript "1.7.48" :scope "test"]
+                    [org.clojure/clojurescript "1.7.166" :scope "test"]
                     [ns-tracker                "0.3.0"  :scope "test"]])
 
 (require '[adzerk.bootlaces   :refer :all]
@@ -13,7 +13,7 @@
          '[adzerk.boot-cljs   :refer [cljs]]
          '[pandeiro.boot-http :refer [serve]])
 
-(def +version+ "1.7.48-6")
+(def +version+ "1.7.166-1")
 
 (bootlaces! +version+)
 
