@@ -88,7 +88,7 @@
                                               :type warning-type})))))]
     (try
       (build
-        (apply inputs input-path (if (#{nil :none} optimizations) dirs))
+        (inputs input-path)
         (assoc opts :warning-handlers [handler])
         stored-env)
       {:warnings  @warnings
