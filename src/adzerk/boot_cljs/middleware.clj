@@ -56,8 +56,8 @@
         init-fns     (:init-fns main)
         requires     (into (sorted-set) (:require main))
         init-nss     (into requires (->> init-fns (keep namespace) (map symbol)))]
+    (.mkdirs out-file)
     (when write-main?
-      (.mkdirs out-file)
       (doto cljs-file
         (io/make-parents)
         (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns)))))
