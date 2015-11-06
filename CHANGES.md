@@ -1,3 +1,7 @@
+## 1.7.170-1 (6.11.2015)
+
+- Update to match latest ClojureScript release
+
 ## 1.7.166-1 (4.11.2015)
 
 - Removed workaround related to recompile-dependents which is made unncessary
