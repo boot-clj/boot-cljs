@@ -1,3 +1,8 @@
+## 1.7.170-3 (8.11.2015)
+
+- Fixed critical bug introduced in the previous release
+    - Second compilation broke the main shim
+
 ## 1.7.170-2 (8.11.2015)
 
 - Read `.cljs.edn` always instead of only once
