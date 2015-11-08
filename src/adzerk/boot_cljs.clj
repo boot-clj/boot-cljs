@@ -102,7 +102,8 @@
   (let [tmp-src (core/tmp-dir!)]
     {:pod         (new-pod! tmp-src)
      :initial-ctx {:tmp-src tmp-src
-                   :tmp-out (core/tmp-dir!)}}))
+                   :tmp-out (core/tmp-dir!)
+                   :main-ns-name (name (gensym "main"))}}))
 
 (defn- compile-1
   [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn}]
@@ -113,7 +114,7 @@
   (let [{:keys [pod initial-ctx]} (get @compilers path)
         ctx (-> initial-ctx
                 (assoc :main (-> (read-cljs-edn cljs-edn)
-                                 (assoc :ns-name (name (gensym "main")))))
+                                 (assoc :ns-name (:main-ns-name initial-ctx))))
                 (wrap/compiler-options task-opts)
                 (wrap/main write-main?)
                 wrap/source-map)
