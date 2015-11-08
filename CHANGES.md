@@ -1,3 +1,9 @@
+## 1.7.170-2 (8.11.2015)
+
+- Read `.cljs.edn` always instead of only once
+    - This allows editing `:require` and `:compiler-options` in without
+    restarting the build process.
+
 ## 1.7.170-1 (6.11.2015)
 
 - Update to match latest ClojureScript release
