@@ -27,6 +27,23 @@
 
 (deftask run-tests
   []
-  (comp (serve)
-        (cljs :optimizations :whitespace)
-        (test :namespaces #{'adzerk.boot-cljs-test 'adzerk.boot-cljs.util-test})))
+  ; We want to run the SAME compiler multiple times
+  (let [cljs-compiler (cljs :optimizations :whitespace :compiler-options {:verbose true})]
+    (comp (serve)
+          cljs-compiler
+          (test :namespaces #{'adzerk.boot-cljs-test 'adzerk.boot-cljs.util-test})
+          ; Append new line to two files in the fileset
+          (fn [next-task]
+            (let [out (boot.core/tmp-dir!)]
+              (fn [fileset]
+                (doseq [x (->> fileset
+                               boot.core/input-files
+                               (boot.core/by-path ["demo/core.cljs"]))]
+                  (doto (clojure.java.io/file out (boot.core/tmp-path x))
+                    (clojure.java.io/make-parents)
+                    (spit
+                      (str (slurp (boot.core/tmp-file x)) "\n")
+                      :append true)))
+                (next-task (-> fileset (boot.core/add-resource out) boot.core/commit!)))))
+          cljs-compiler
+          (test :namespaces #{'adzerk.boot-cljs-test 'adzerk.boot-cljs.util-test}))))
