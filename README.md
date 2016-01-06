@@ -6,7 +6,7 @@
 ```
 [](/dependency)
 
-[Boot] task to compile ClojureScript applications.
+[Boot](http://boot-clj.com/) task to compile ClojureScript applications.
 
 * Provides the `cljs` task for compiling ClojureScript to JavaScript
 * Provides a mechanism by which multiple multiple JS applications can be
