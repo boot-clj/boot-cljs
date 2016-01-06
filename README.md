@@ -48,7 +48,7 @@ For more [comprehesive guide](https://github.com/adzerk-oss/boot-cljs/wiki/Usage
 ## License
 
 Copyright © 2014 Adzerk<br>
-Copyright © 2015 Juho Teperi
+Copyright © 2015-2016 Juho Teperi
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
