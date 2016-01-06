@@ -19,7 +19,7 @@ Add ClojureScript and `boot-cljs` to your `build.boot` dependencies and `require
 
 ```clj
 (set-env! :dependencies '[[adzerk/boot-cljs "X.Y.Z" :scope "test"]])
-(require '[adzerk.boot-cljs :refer :all])
+(require '[adzerk.boot-cljs :refer [cljs]])
 ```
 
 You can see the options available on the command line:
