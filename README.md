@@ -1,4 +1,4 @@
-# boot-cljs [![Circle CI](https://circleci.com/gh/adzerk-oss/boot-cljs.svg?style=shield)](https://circleci.com/gh/adzerk-oss/boot-cljs) [![Dependencies Status](https://jarkeeper.com/adzerk/boot-cljs/status.svg)](https://jarkeeper.com/adzerk/boot-cljs)
+# boot-cljs [![Circle CI](https://circleci.com/gh/adzerk-oss/boot-cljs.svg?style=shield)](https://circleci.com/gh/adzerk-oss/boot-cljs) [![Downloads](https://jarkeeper.com/adzerk/boot-cljs/downloads.svg)](https://jarkeeper.com/adzerk/boot-cljs) [![Dependencies Status](https://jarkeeper.com/adzerk/boot-cljs/status.svg)](https://jarkeeper.com/adzerk/boot-cljs)
 
 
 [](dependency)
