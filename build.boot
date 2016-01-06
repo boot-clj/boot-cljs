@@ -2,9 +2,9 @@
   :resource-paths #{"src"}
   :source-paths #{"test"}
   :dependencies   '[[org.clojure/clojure       "1.7.0"  :scope "provided"]
-                    [adzerk/bootlaces          "0.1.12" :scope "test"]
-                    [adzerk/boot-test          "1.0.4"  :scope "test"]
-                    [pandeiro/boot-http        "0.6.3"  :scope "test"]
+                    [adzerk/bootlaces          "0.1.13" :scope "test"]
+                    [adzerk/boot-test          "1.1.0"  :scope "test"]
+                    [pandeiro/boot-http        "0.7.0"  :scope "test"]
                     [org.clojure/clojurescript "1.7.170" :scope "test"]
                     [ns-tracker                "0.3.0"  :scope "test"]])
 
