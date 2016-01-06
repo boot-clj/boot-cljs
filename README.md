@@ -42,6 +42,7 @@ For more [comprehesive guide](https://github.com/adzerk-oss/boot-cljs/wiki/Usage
 - [boot-cljs-example](https://github.com/adzerk/boot-cljs-example) - An example project with a local web server, CLJS REPL, and live-reload.
 - [Saapas example project](https://github.com/Deraen/saapas)
 - [Tenzing project template](https://github.com/martinklepsch/tenzing)
+- [Modern ClojureScript](https://github.com/magomimmo/modern-cljs) - Series of tutorials for ClojureScript. Uses Boot.
 
 
 ## License
