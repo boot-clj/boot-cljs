@@ -90,12 +90,15 @@
         (getStackTrace []
           stack-trace)))))
 
-(defn select-cause [ex p]
-  (loop [ex ex]
-    (if (p ex)
-      ex
-      (if (.getCause ex)
-        (recur (.getCause ex))))))
+(defn merge-cause-ex-data
+  "Merges ex-data from all exceptions in cause stack. First value for a key is
+  used."
+  [ex]
+  (loop [ex ex
+         data {}]
+    (if-let [c (.getCause ex)]
+      (recur c (merge (ex-data ex) data))
+      (merge (ex-data ex) data))))
 
 (defn last-cause [ex]
   (loop [ex ex]

@@ -44,8 +44,7 @@
    If ex-data has file property, it is changed to contain path in original source-paths.
    Exceptino message is rewriten to contain fixed path."
   [e source-paths dirs]
-  (let [e (or (util/select-cause e #(or (:type (ex-data %)) (:tag (ex-data %)))) e)
-        {:keys [type tag file line column]} (ex-data e)
+  (let [{:keys [type tag file line column] :as data} (util/merge-cause-ex-data e)
         ; Get the message without location info
         message (.getMessage (util/last-cause e))
         path (util/find-original-path source-paths dirs file)
@@ -59,7 +58,7 @@
     (util/serialize-exception
       (ex-info
         message
-        (-> (ex-data e)
+        (-> data
             (assoc :from :boot-cljs)
             (cond-> path (assoc :file path)))
         (.getCause e)))))

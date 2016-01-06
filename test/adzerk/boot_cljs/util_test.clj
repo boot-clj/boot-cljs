@@ -45,3 +45,6 @@
         a (deserialize-exception (serialize-exception original))]
     (is (= (drop-first-line (with-out-str (st/print-stack-trace original)))
            (drop-first-line (with-out-str (st/print-stack-trace a)))))))
+
+(deftest merge-cause-ex-data-test
+  (is (= {:a 1 :b 2} (merge-cause-ex-data (ex-info "a" {:a 1} (ex-info "b" {:b 2}))))))
