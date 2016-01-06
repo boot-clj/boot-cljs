@@ -1,4 +1,5 @@
-# boot-cljs [![Circle CI](https://circleci.com/gh/adzerk-oss/boot-cljs.svg?style=svg)](https://circleci.com/gh/adzerk-oss/boot-cljs)
+# boot-cljs [![Circle CI](https://circleci.com/gh/adzerk-oss/boot-cljs.svg?style=shield)](https://circleci.com/gh/adzerk-oss/boot-cljs) [![Dependencies Status](https://jarkeeper.com/adzerk-oss/boot-cljs/status.svg)](https://jarkeeper.com/adzerk-oss/boot-cljs)
+
 
 [](dependency)
 ```clojure
