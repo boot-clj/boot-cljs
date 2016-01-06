@@ -12,4 +12,5 @@ dependencies:
     - boot show -d
 test:
   override:
-    - boot run-tests
+    - boot run-tests -j junit
+    - cp target/junit/* $CIRLCE_TEST_REPORTS
