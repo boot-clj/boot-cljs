@@ -1,15 +1,21 @@
 ## 1.7.170-3 (8.11.2015)
 
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.170-2...1.7.170-3)**
+
 - Fixed critical bug introduced in the previous release
     - Second compilation broke the main shim
 
 ## 1.7.170-2 (8.11.2015)
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.170-1...1.7.170-2)**
 
 - Read `.cljs.edn` always instead of only once
     - This allows editing `:require` and `:compiler-options` in without
     restarting the build process.
 
 ## 1.7.170-1 (6.11.2015)
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.166-1...1.7.170-1)**
 
 - Update to match latest ClojureScript release
 
