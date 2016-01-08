@@ -13,7 +13,7 @@
             [clojure.string :as string])
   (:import [java.util.concurrent ExecutionException]))
 
-(def cljs-version "1.7.170")
+(def cljs-version "1.7.228")
 
 (defn- cljs-depdendency []
   (let [proj-deps    (core/get-env :dependencies)
