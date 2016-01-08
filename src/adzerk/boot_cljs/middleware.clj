@@ -30,6 +30,10 @@
   [cljs-edn-path]
   (str (.replaceAll cljs-edn-path "\\.cljs\\.edn$" "") ".js"))
 
+(defn- cljs-edn-path->module-path
+  [cljs-edn-path module-k]
+  (.getPath (io/file (str (.replaceAll cljs-edn-path "\\.cljs\\.edn$" "")) (str (name module-k) ".js"))))
+
 ;; middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn compiler-options
@@ -67,6 +71,27 @@
         (assoc-in [:opts :output-to] js-path)
         (assoc-in [:opts :main] cljs-ns))))
 
+(defn modules
+  "If .cljs.edn file contains modules declaration, use it to create options
+  to ClojureScript compiler. Output-to values are generated for modules
+  based on relative path of .cljs.edn file and key of the module.
+
+  Cljs-base module is written to the path of .cljs.edn (similar to how
+  output-to is set without modules).
+
+  Example, js/main.cljs.edn with modules declaration will setup following options:
+  :modules {:cljs-base {:output-to \"<tmp-dir>/js/main.js\"}
+            :common    {:output-to \"<tmp-dir>/js/main/common.js\" ...}
+            :core      {:output-to \"<tmp-dir>/js/main/core.js\" ...}}"
+  [{:keys [tmp-out main] :as ctx}]
+  (if-let [modules (:modules main)]
+    (assoc-in ctx [:opts :modules] (assoc (into {} (map (fn [[k v]]
+                                                          (let [js-path (util/path tmp-out (cljs-edn-path->module-path (:rel-path main) k))]
+                                                            [k (assoc v :output-to js-path)]))
+                                                        modules))
+                                          :cljs-base {:output-to (:output-to (:opts ctx))}))
+    ctx))
+
 (defn source-map
   "Middleware to configure source map related CLJS compiler options."
   [{:keys [opts] :as ctx}]
@@ -77,7 +102,8 @@
           dir (.getName (io/file (:output-dir opts)))]
       ; Under :none optimizations only true and false are valid values:
       ; https://github.com/clojure/clojurescript/wiki/Compiler-Options#source-map
+      ; If modules are used, should be true.
       (update-in ctx [:opts] assoc
                  :optimizations optimizations
-                 :source-map (if (= optimizations :none) true sm)
+                 :source-map (if (or (= optimizations :none) (:modules opts)) true sm)
                  :source-map-path dir))))

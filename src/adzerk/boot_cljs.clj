@@ -117,6 +117,7 @@
                                  (assoc :ns-name (:main-ns-name initial-ctx))))
                 (wrap/compiler-options task-opts)
                 (wrap/main write-main?)
+                (wrap/modules)
                 wrap/source-map)
         tmp (:tmp-out initial-ctx)
         out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
