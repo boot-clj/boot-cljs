@@ -1,3 +1,12 @@
+## Unreleased
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.170-3...master)**
+
+- Update default ClojureScript release to 1.7.228
+- Improved exception messages in some cases. ([#110](https://github.com/adzerk-oss/boot-cljs/issues/110))
+- Added *experimental* support for Closure Modules using `:modules` option on
+`.cljs.edn` files. ([#113](https://github.com/adzerk-oss/boot-cljs/issues/113))
+
 ## 1.7.170-3 (8.11.2015)
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.170-2...1.7.170-3)**
