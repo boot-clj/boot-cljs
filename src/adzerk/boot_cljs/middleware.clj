@@ -1,6 +1,7 @@
 (ns adzerk.boot-cljs.middleware
   (:require [adzerk.boot-cljs.util :as util]
             [boot.file :as file]
+            [boot.util :as butil]
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
@@ -43,6 +44,11 @@
                           compiler-options
                           (:compiler-options main))))
 
+(defn set-option [ctx k value]
+  (when-let [current-value (get-in ctx [:opts k])]
+    (butil/warn "WARNING: Replacing ClojureScript compiler option %s with automatically set value.\n" k))
+  (assoc-in ctx [:opts k] value))
+
 (defn main
   "Middleware to create the CLJS namespace for the build's .cljs.edn file and
   set the compiler :output-to option accordingly. The :output-to will be derived
@@ -67,9 +73,9 @@
         (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns)))))
     (-> ctx
         (update-in [:opts :asset-path] #(if % % asset-path))
-        (assoc-in [:opts :output-dir] out-path)
-        (assoc-in [:opts :output-to] js-path)
-        (assoc-in [:opts :main] cljs-ns))))
+        (set-option :output-dir out-path)
+        (set-option :output-to js-path)
+        (set-option :main main))))
 
 (defn modules
   "If .cljs.edn file contains modules declaration, use it to create options
@@ -85,11 +91,11 @@
             :core      {:output-to \"<tmp-dir>/js/main/core.js\" ...}}"
   [{:keys [tmp-out main] :as ctx}]
   (if-let [modules (:modules main)]
-    (assoc-in ctx [:opts :modules] (assoc (into {} (map (fn [[k v]]
-                                                          (let [js-path (util/path tmp-out (cljs-edn-path->module-path (:rel-path main) k))]
-                                                            [k (assoc v :output-to js-path)]))
-                                                        modules))
-                                          :cljs-base {:output-to (:output-to (:opts ctx))}))
+    (set-option ctx :modules (assoc (into {} (map (fn [[k v]]
+                                                    (let [js-path (util/path tmp-out (cljs-edn-path->module-path (:rel-path main) k))]
+                                                      [k (assoc v :output-to js-path)]))
+                                                  modules))
+                                    :cljs-base {:output-to (:output-to (:opts ctx))}))
     ctx))
 
 (defn source-map
