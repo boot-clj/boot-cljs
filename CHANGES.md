@@ -1,6 +1,6 @@
-## Unreleased
+## 1.7.228-0 (10.1.2016)
 
-**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.170-3...master)**
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.170-3...1.7.228-0)**
 
 - Update default ClojureScript release to 1.7.228
 - Improved exception messages in some cases. ([#110](https://github.com/adzerk-oss/boot-cljs/issues/110))
