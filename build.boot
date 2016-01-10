@@ -2,20 +2,16 @@
   :resource-paths #{"src"}
   :source-paths #{"test"}
   :dependencies   '[[org.clojure/clojure       "1.7.0"  :scope "provided"]
-                    [adzerk/bootlaces          "0.1.13" :scope "test"]
                     [adzerk/boot-test          "1.1.0"  :scope "test"]
                     [pandeiro/boot-http        "0.7.0"  :scope "test"]
                     [org.clojure/clojurescript "1.7.228" :scope "test"]
                     [ns-tracker                "0.3.0"  :scope "test"]])
 
-(require '[adzerk.bootlaces   :refer :all]
-         '[adzerk.boot-test   :refer [test]]
+(require '[adzerk.boot-test   :refer [test]]
          '[adzerk.boot-cljs   :refer [cljs]]
          '[pandeiro.boot-http :refer [serve]])
 
 (def +version+ "1.7.228-0")
-
-(bootlaces! +version+)
 
 (task-options!
   pom {:project     'adzerk/boot-cljs
@@ -31,3 +27,14 @@
         (cljs :optimizations :whitespace)
         (test :namespaces #{'adzerk.boot-cljs-test 'adzerk.boot-cljs.util-test}
               :junit-output-to junit-output-to)))
+
+(deftask build []
+  (comp
+   (pom)
+   (jar)
+   (install)))
+
+(deftask deploy []
+  (comp
+   (build)
+   (push :repo "clojars" :gpg-sign (not (.endsWith +version+ "-SNAPSHOT")))))
