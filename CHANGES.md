@@ -1,3 +1,9 @@
+## 1.7.228-1 (11.1.2016)
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-0...1.7.228-1)**
+
+- Fixed optimization none builds ([#115](https://github.com/adzerk-oss/boot-cljs/pull/115))
+
 ## 1.7.228-0 (10.1.2016)
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.170-3...1.7.228-0)**
