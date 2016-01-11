@@ -22,9 +22,10 @@
        :license     {"EPL" "http://www.eclipse.org/legal/epl-v10.html"}})
 
 (deftask run-tests
-  [j junit-output-to JUNIT str ""]
+  [O optimizations   LEVEL kw  "Compiler optimization level."
+   j junit-output-to JUNIT str "Test report destination."]
   (comp (serve)
-        (cljs :optimizations :whitespace)
+        (cljs :optimizations (or optimizations :whitespace))
         (test :namespaces #{'adzerk.boot-cljs-test 'adzerk.boot-cljs.util-test}
               :junit-output-to junit-output-to)))
 
