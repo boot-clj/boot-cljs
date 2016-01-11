@@ -75,7 +75,7 @@
         (update-in [:opts :asset-path] #(if % % asset-path))
         (set-option :output-dir out-path)
         (set-option :output-to js-path)
-        (set-option :main main))))
+        (set-option :main cljs-ns))))
 
 (defn modules
   "If .cljs.edn file contains modules declaration, use it to create options
