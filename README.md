@@ -28,7 +28,7 @@ Or the same in the REPL:
 boot.user=> (doc cljs)
 ```
 
-For more [comprehesive guide](https://github.com/adzerk-oss/boot-cljs/wiki/Usage) check [wiki](https://github.com/adzerk-oss/boot-cljs/wiki).
+For more [comprehensive guide](https://github.com/adzerk-oss/boot-cljs/wiki/Usage) check [wiki](https://github.com/adzerk-oss/boot-cljs/wiki).
 
 ### Further Reading
 
@@ -36,7 +36,7 @@ For more [comprehesive guide](https://github.com/adzerk-oss/boot-cljs/wiki/Usage
 when porting a project.
 - [Simple example](https://github.com/adzerk-oss/boot-cljs/wiki/Example)
 - [boot-cljs-example](https://github.com/adzerk/boot-cljs-example) - An example project with a local web server, CLJS REPL, and live-reload.
-- [Saapas example project](https://github.com/Deraen/saapas) - Opionated example project for Boot.
+- [Saapas example project](https://github.com/Deraen/saapas) - Opinionated example project for Boot.
 - [Tenzing project template](https://github.com/martinklepsch/tenzing) - ClojureScript application template.
 - [Modern ClojureScript](https://github.com/magomimmo/modern-cljs) - Series of tutorials for ClojureScript. Uses Boot.
 
