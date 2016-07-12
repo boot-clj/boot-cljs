@@ -73,7 +73,9 @@
       (swap! core/*warnings* + (or (count warnings) 0))
       (when exception
         (throw (util/deserialize-exception exception)))
-      (-> result (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))))))
+      (-> result
+          (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))
+          (assoc :opts opts)))))
 
 (defn- macro-files-changed
   [diff]
@@ -160,7 +162,14 @@
 (defn- cljs-warnings-meta
   [cljs-edns results]
   (zipmap (map :path cljs-edns)
-          (map (fn [r] {::warnings (:warnings r)}) results)))
+          (map (fn [r] {::warnings (:warnings r)})
+               results)))
+
+(defn- cljs-opts-meta
+  [cljs-edns results]
+  (zipmap (map :path cljs-edns)
+          (map (fn [r] {::opts (:opts r)})
+               results)))
 
 (core/deftask cljs
   "Compile ClojureScript applications.
@@ -232,6 +241,7 @@
               ;; Add warnings to .cljs.edn files metadata so other tasks
               ;; can use this information and report it to users
               (core/add-meta (cljs-warnings-meta cljs-edns results))
+              (core/add-meta (cljs-opts-meta cljs-edns results))
               ;; Add metadata to mark the output of this task so subsequent
               ;; instances of the cljs task can remove them before compiling.
               (core/add-meta (cljs-output-meta tmp-result))
