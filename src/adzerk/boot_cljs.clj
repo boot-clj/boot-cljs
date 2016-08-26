@@ -186,7 +186,14 @@
 
   The --compiler-options option can be used to set any other options that should
   be passed to the Clojurescript compiler. A full list of options can be found
-  here: https://github.com/clojure/clojurescript/wiki/Compiler-Options."
+  here: https://github.com/clojure/clojurescript/wiki/Compiler-Options.
+
+  Cljs compiler options are merged in this order:
+
+  1. :compiler-options in .cljs.edn file
+  2. :compiler-options task option
+  3. :optimizations and :source-map task options
+  4. options automatically set by boot-cljs (:output-dir, :output-to, :main)"
 
   [i ids IDS               #{str} ""
    O optimizations LEVEL   kw   "The optimization level."
