@@ -40,9 +40,9 @@
 (defn compiler-options
   [{:keys [opts main] :as ctx}
    {:keys [compiler-options] :as task-options}]
-  (assoc ctx :opts (merge (select-keys task-options [:optimizations :source-map])
+  (assoc ctx :opts (merge (:compiler-options main)
                           compiler-options
-                          (:compiler-options main))))
+                          (select-keys task-options [:optimizations :source-map]))))
 
 (defn set-option [ctx k value]
   (when-let [current-value (get-in ctx [:opts k])]
@@ -72,6 +72,7 @@
         (io/make-parents)
         (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns)))))
     (-> ctx
+        ;; Only update asset-path in not set
         (update-in [:opts :asset-path] #(if % % asset-path))
         (set-option :output-dir out-path)
         (set-option :output-to js-path)
