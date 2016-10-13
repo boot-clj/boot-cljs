@@ -1,9 +1,9 @@
-## Unreleased
+## 1.7.228-2 (18.10.2016)
 
-**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-1...master)**
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-1...1.7.228-2)**
 
 - Changed the order compiler-options are merged. Task-options are now merged on top of
-options from .cljs.edn. This allows overriding some options per build task.
+options from .cljs.edn. This allows overriding options per build task invocation.
 
 ## 1.7.228-1 (11.1.2016)
 
