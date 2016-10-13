@@ -120,10 +120,13 @@
                 (wrap/modules)
                 wrap/source-map)
         tmp (:tmp-out initial-ctx)
-        out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
+        out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))
+        t *out*]
     (info "• %s\n" out)
     (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint (:opts ctx))))
-    (future (compile ctx macro-changes @pod))))
+    (future
+      (binding [*out* t]
+        (compile ctx macro-changes @pod)))))
 
 (core/deftask ^:private default-main
   "Private task.
