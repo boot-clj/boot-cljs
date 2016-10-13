@@ -11,7 +11,7 @@
          '[adzerk.boot-cljs   :refer [cljs]]
          '[pandeiro.boot-http :refer [serve]])
 
-(def +version+ "1.7.228-1")
+(def +version+ "1.7.228-2-SNAPSHOT")
 
 (task-options!
   pom {:project     'adzerk/boot-cljs
