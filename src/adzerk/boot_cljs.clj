@@ -23,7 +23,7 @@
       ; org.clojure/clojurescript in project (non-transitive) deps - do nothing
       cljs-dep?    nil
       ; cljs.core on classpath, org.clojure/clojurescript not in project deps
-      cljs-exists? (do (warn "WARNING: No ClojureScript in project dependencies but ClojureScript was found in classpath. Adding direct dependency is adviced.\n") nil)
+      cljs-exists? (do (warn "WARNING: No ClojureScript in project dependencies but ClojureScript was found in classpath. Adding direct dependency is advised.\n") nil)
       ; no cljs on classpath, no project dep, add cljs dep to pod
       :else        ['org.clojure/clojurescript cljs-version])))
 
