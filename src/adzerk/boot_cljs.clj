@@ -244,3 +244,29 @@
               (core/add-meta (cljs-output-meta tmp-result))
               (core/add-meta (deps/compiled fileset dep-order))
               core/commit!))))))
+
+(boot/deftask cljs-edn
+  "Generate a .cljs.edn file."
+  [e edn      VAL str   "EDN file name."
+   r require  VAL [sym] "Vector of namespaces to require."
+   f init-fns VAL [sym] "Vector of fuctions to wrap in do block."
+   t target   VAL kw    "Target platform."
+   d closure-defines  VAL {} "A map of closure defines options."
+   o compiler-options VAL {} "A map of compiler options."]
+   (assert (:edn *opts*) "Must provide an edn file name.")
+   (assert (:init-fns *opts*) "Must provide an init-fn.")
+   (let [edn    (:edn *opts*)
+         init   (:init-fn *opts*)
+         main   (symbol (namespace init))
+         ednstr {:require (:require *opts* [])
+                 :init-fns (:init-fns *opts* [])
+                 :compiler-options (:compiler-options *opts*
+                                     {:target (:target *opts*)
+                                      :closure-defines (:closure-defines *opts*)})}
+         tmp    (boot/tmp-dir!)
+         fname  (str edn ".cljs.edn")
+         fedn   (io/file tmp fname)]
+     (boot/with-pre-wrap fileset
+       (util/info (str "Generating EDN file: " fname "\n"))
+       (doto fedn (spit ednstr))
+       (-> fileset (boot/add-resource tmp) boot/commit!))))
