@@ -245,7 +245,7 @@
               (core/add-meta (deps/compiled fileset dep-order))
               core/commit!))))))
 
-(boot/deftask cljs-edn
+(core/deftask cljs-edn
   "Generate a .cljs.edn file."
   [e edn      VAL str   "EDN file name."
    r require  VAL [sym] "Vector of namespaces to require."
@@ -263,10 +263,10 @@
                  :compiler-options (:compiler-options *opts*
                                      {:target (:target *opts*)
                                       :closure-defines (:closure-defines *opts*)})}
-         tmp    (boot/tmp-dir!)
+         tmp    (core/tmp-dir!)
          fname  (str edn ".cljs.edn")
          fedn   (io/file tmp fname)]
-     (boot/with-pre-wrap fileset
+     (core/with-pre-wrap fileset
        (util/info (str "Generating EDN file: " fname "\n"))
        (doto fedn (spit ednstr))
-       (-> fileset (boot/add-resource tmp) boot/commit!))))
+       (-> fileset (core/add-resource tmp) core/commit!))))
