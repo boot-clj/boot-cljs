@@ -267,6 +267,6 @@
          fname  (str edn ".cljs.edn")
          fedn   (io/file tmp fname)]
      (core/with-pre-wrap fileset
-       (util/info (str "Generating EDN file: " fname "\n"))
+       (info (str "Generating EDN file: " fname "\n"))
        (doto fedn (spit ednstr))
        (-> fileset (core/add-resource tmp) core/commit!))))
