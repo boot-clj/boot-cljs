@@ -5,9 +5,7 @@
             [clojure.string :as str]))
 
 (defn generate
-  "Append the specified definition to the specified namespace.
-  Create the namespace if necessary. The symbol should be
-  fully-qualified: my.ns/my-var"
+  "Generate a .cljs.edn file relative to the prefix."
   [prefix name & [require init-fns compiler-options]]
   (let [[fs-name the-sym] (str/split name #"/")
         path (tmpl/name-to-path ns-name)
