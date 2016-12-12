@@ -3,6 +3,7 @@
             [boot.kahnsort :as kahn]
             [boot.pod :as pod]
             [boot.util :as butil]
+            [clojure.string :as str]
             [cljs.analyzer :as ana]
             [cljs.analyzer.api :as ana-api :refer [empty-state warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
@@ -66,25 +67,34 @@
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
   opts, compiles the CLJS to produce JS files."
-  [input-path {:keys [optimizations] :as opts}]
+  [input-path {:keys [optimizations asset-path] :as opts}]
   ;; So directories need to be passed to cljs compiler when compiling in dev
   ;; or there are stale namespace problems with tests. However, if compiling
   ;; with optimizations other than :none adding directories will break the
   ;; build and defeat tree shaking and :main option.
   (let [dirs (:directories pod/env)
-        ; Includes also some tmp-dirs passed to this pod, but shouldn't matter
+        ;; Includes also some tmp-dirs passed to this pod, but shouldn't matter
         source-paths (concat (:source-paths pod/env) (:resource-paths pod/env))
         warnings (atom [])
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
                     (when-let [s (ana/error-message warning-type extra)]
-                      (let [path (util/find-original-path source-paths dirs ana/*cljs-file*)]
-                        (butil/warn "WARNING: %s %s\n" s (when (:line env)
-                                                           (str "at line " (:line env) " " path)))
-                        (swap! warnings conj {:message s
-                                              :file path
-                                              :line (:line env)
-                                              :type warning-type})))))]
+                      (let [path (if (= (-> env :ns :name) 'cljs.core)
+                                   ;; AR - figwheel does this as well
+                                   (-> asset-path
+                                       (str/replace #"/$" "")
+                                       (str "/cljs/core.cljs"))
+                                   (util/find-original-path source-paths dirs ana/*cljs-file*))
+                            warning-data {:line (:line env)
+                                          :column (:column env)
+                                          :ns (-> env :ns :name)
+                                          :file path
+                                          :type warning-type
+                                          :message s
+                                          :extra extra}]
+                        (butil/warn "WARNING: %s %s\n" s (when (:line env) (str "at line " (:line env) " " path)))
+                        (butil/dbug "%s\n" (butil/pp-str warning-data))
+                        (swap! warnings conj warning-data)))))]
     (try
       (build
         (inputs input-path)
