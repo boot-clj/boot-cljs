@@ -3,6 +3,7 @@
 [Boot](http://boot-clj.com/) task to compile ClojureScript applications.
 
 * Provides the `cljs` task for compiling ClojureScript to JavaScript
+* Supports [ClojureScript versions](https://github.com/clojure/clojurescript/blob/master/changes.md) since 1.7.228 (older versions might also work)
 * Provides a mechanism by which multiple multiple JS applications can be
   compiled in the same project.
 * **Related projects:** [boot-reload](https://github.com/adzerk-oss/boot-reload) and [boot-cljs-repl](https://github.com/adzerk-oss/boot-cljs-repl)
