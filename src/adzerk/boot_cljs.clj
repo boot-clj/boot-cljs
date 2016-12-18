@@ -91,26 +91,26 @@
           select
           (sort-by :path))))
 
-(defn- new-pod! [tmp-src]
-  (let [env (-> (core/get-env)
+(defn- new-pod! [tmp-src env]
+  (let [env (-> env
                 (update-in [:dependencies] into @deps)
                 (update-in [:directories] conj (.getPath tmp-src)))]
     (future (doto (pod/make-pod env) assert-clojure-version!))))
 
 (defn- make-compiler
-  [cljs-edn]
+  [cljs-edn env]
   (let [tmp-src (core/tmp-dir!)]
-    {:pod         (new-pod! tmp-src)
+    {:pod         (new-pod! tmp-src env)
      :initial-ctx {:tmp-src tmp-src
                    :tmp-out (core/tmp-dir!)
                    :main-ns-name (name (gensym "main"))}}))
 
 (defn- compile-1
-  [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn}]
+  [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn} env]
   (swap! compilers (fn [compilers]
                      (if (contains? compilers path)
                        compilers
-                       (assoc compilers path (make-compiler cljs-edn)))))
+                       (assoc compilers path (make-compiler cljs-edn env)))))
   (let [{:keys [pod initial-ctx]} (get @compilers path)
         ctx (-> initial-ctx
                 (assoc :main (-> (read-cljs-edn cljs-edn)
@@ -202,7 +202,8 @@
 
   (let [tmp-result (core/tmp-dir!)
         compilers  (atom {})
-        prev       (atom nil)]
+        prev       (atom nil)
+        env        (core/get-env)]
     (comp
       (default-main :ids ids)
       (core/with-pre-wrap fileset
@@ -218,7 +219,7 @@
               ;; Force realization to start compilation
               futures   (doall (map (fn [cljs-edn]
                                       (let [write-main?  (contains? changed-cljs-edns cljs-edn)]
-                                        (compile-1 compilers *opts* macro-changes write-main? cljs-edn)))
+                                        (compile-1 compilers *opts* macro-changes write-main? cljs-edn env)))
                                     cljs-edns))
               ;; Wait for all compilations to finish
               ;; Remove unnecessary layer of cause stack added by futures
