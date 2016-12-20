@@ -217,7 +217,7 @@
               changed-cljs-edns (->> diff core/input-files (core/by-ext [".cljs.edn"]) set)
               ;; Force realization to start compilation
               futures   (doall (map (fn [cljs-edn]
-                                      (let [write-main?  (contains? changed-cljs-edns cljs-edn)]
+                                      (let [write-main? (contains? changed-cljs-edns cljs-edn)]
                                         (compile-1 compilers *opts* macro-changes write-main? cljs-edn)))
                                     cljs-edns))
               ;; Wait for all compilations to finish
