@@ -46,7 +46,10 @@
 
 (defn set-option [ctx k value]
   (when-let [current-value (get-in ctx [:opts k])]
-    (butil/warn "WARNING: Replacing ClojureScript compiler option %s with automatically set value.\n" k))
+    (butil/warn "WARNING: Replacing ClojureScript compiler option %s with automatically set value%s.\n"
+                k (case k
+                    :main ": :main option is not compatibly with :require or :init-fns."
+                    nil)))
   (assoc-in ctx [:opts k] value))
 
 (defn main
@@ -63,20 +66,25 @@
         cljs-path    (util/path "boot" "cljs" (str (:ns-name main) ".cljs"))
         cljs-file    (io/file tmp-src cljs-path)
         cljs-ns      (symbol (util/path->ns cljs-path))
-        init-fns     (:init-fns main)
-        requires     (into (sorted-set) (:require main))
-        init-nss     (into requires (->> init-fns (keep namespace) (map symbol)))]
-    (.mkdirs out-file)
-    (when write-main?
-      (doto cljs-file
-        (io/make-parents)
-        (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns)))))
+
+        use-main-compiler-option? (and (get-in ctx [:opts :main]) (empty? (:init-fns main)) (empty? (:require main)))]
+
+    (if-not use-main-compiler-option?
+      (let [init-fns     (:init-fns main)
+            requires     (into (sorted-set) (:require main))
+            init-nss     (into requires (->> init-fns (keep namespace) (map symbol)))]
+        (.mkdirs out-file)
+        (when write-main?
+          (doto cljs-file
+            (io/make-parents)
+            (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns)))))))
+
     (-> ctx
         ;; Only update asset-path in not set
         (update-in [:opts :asset-path] #(if % % asset-path))
         (set-option :output-dir out-path)
         (set-option :output-to js-path)
-        (set-option :main cljs-ns))))
+        (cond-> (not use-main-compiler-option?) (set-option :main cljs-ns)))))
 
 (defn modules
   "If .cljs.edn file contains modules declaration, use it to create options

@@ -1,3 +1,12 @@
+## Unreleased
+
+- Allow using `:main` option if neither `:require` or `:init-fns` is used in
+`.cljs.edn` file.
+    - **NOTE**: Older boot-reload and boot-cljs-repl use `:require` to add their
+    code to the build. You need to use versions `[adzerk/boot-reload "x.y.z"]`
+    and `[adzerk/boot-cljs-repl "x.y.z"]` which use `:preload` compiler option
+    if `:require` or `:init-fns` are not used.
+
 ## 1.7.228-2 (18.10.2016)
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-1...1.7.228-2)**
