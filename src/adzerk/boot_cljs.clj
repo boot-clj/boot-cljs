@@ -138,6 +138,21 @@
 
   ctx)
 
+(def output-wrapper-warning
+  "WARNING
+
+Using optimization level %s without setting :output-wrapper pollutes the
+global JavaScript namespace, which may cause problems with external libraries.
+For optimization level :simple or :advanced, it is safer to set :output-wrapper to true.
+To silence this warning instead, explicitly set :output-wrapper to false.
+
+See https://github.com/adzerk-oss/boot-cljs/wiki/Namespace-pollution\n\n")
+
+(defn- validate-opts [{:keys [optimizations output-wrapper output-to] :as opts}]
+  (when (and optimizations (not (#{:none :whitespace} optimizations)) (nil? output-wrapper))
+    ;; Only complain if output-wrapper is false, not nil
+    (warn output-wrapper-warning optimizations)))
+
 (defn- compile-1
   [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn} deps-changed?]
   (let [cljs-edn-content (read-cljs-edn cljs-edn)
@@ -147,13 +162,13 @@
                                (assoc compilers path (make-compiler cljs-edn-content)))))
 
         {:keys [initial-ctx pod]} (get @compilers path)
-        ctx (-> initial-ctx
-                (assoc :main cljs-edn-content)
-                (assert-cljs-edn!)
-                (wrap/compiler-options task-opts)
-                (wrap/main write-main?)
-                (wrap/modules)
-                wrap/source-map)
+        {:keys [opts] :as ctx}    (-> initial-ctx
+                                      (assoc :main cljs-edn-content)
+                                      (assert-cljs-edn!)
+                                      (wrap/compiler-options task-opts)
+                                      (wrap/main write-main?)
+                                      (wrap/modules)
+                                      wrap/source-map)
         tmp (:tmp-out initial-ctx)
         out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
 
@@ -161,7 +176,8 @@
       (pod/add-dependencies-in @pod (new-env (:tmp-src initial-ctx))))
 
     (info "• %s\n" out)
-    (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint (:opts ctx))))
+    (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint opts)))
+    (validate-opts opts)
     (future (compile ctx macro-changes @pod))))
 
 (core/deftask ^:private default-main
