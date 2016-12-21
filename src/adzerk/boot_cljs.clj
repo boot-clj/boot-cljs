@@ -107,6 +107,21 @@
                    :tmp-out (core/tmp-dir!)
                    :main-ns-name (name (gensym "main"))}}))
 
+(def output-wrapper-warning
+  "WARNING
+
+Using optimization level %s without setting :output-wrapper pollutes the
+global JavaScript namespace, which may cause problems with external libraries.
+For optimization level :simple or :advanced, it is safer to set :output-wrapper to true.
+To silence this warning instead, explicitly set :output-wrapper to false.
+
+See https://github.com/adzerk-oss/boot-cljs/wiki/Namespace-pollution\n\n")
+
+(defn- validate-opts [{:keys [optimizations output-wrapper output-to] :as opts}]
+  (when (and optimizations (not (#{:none :whitespace} optimizations)) (nil? output-wrapper))
+    ;; Only complain if output-wrapper is false, not nil
+    (warn output-wrapper-warning optimizations)))
+
 (defn- compile-1
   [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn}]
   (swap! compilers (fn [compilers]
@@ -114,17 +129,18 @@
                        compilers
                        (assoc compilers path (make-compiler cljs-edn)))))
   (let [{:keys [pod initial-ctx]} (get @compilers path)
-        ctx (-> initial-ctx
-                (assoc :main (-> (read-cljs-edn cljs-edn)
-                                 (assoc :ns-name (:main-ns-name initial-ctx))))
-                (wrap/compiler-options task-opts)
-                (wrap/main write-main?)
-                (wrap/modules)
-                wrap/source-map)
+        {:keys [opts] :as ctx} (-> initial-ctx
+                                   (assoc :main (-> (read-cljs-edn cljs-edn)
+                                                    (assoc :ns-name (:main-ns-name initial-ctx))))
+                                   (wrap/compiler-options task-opts)
+                                   (wrap/main write-main?)
+                                   (wrap/modules)
+                                   wrap/source-map)
         tmp (:tmp-out initial-ctx)
-        out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
+        out (.getPath (file/relative-to tmp (:output-to opts)))]
     (info "• %s\n" out)
-    (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint (:opts ctx))))
+    (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint opts)))
+    (validate-opts opts)
     (future (compile ctx macro-changes @pod))))
 
 (core/deftask ^:private default-main
