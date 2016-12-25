@@ -1,3 +1,13 @@
+## Unreleased
+
+- Stop following ClojureScript compiler version number
+  - Boot-cljs uses the [public compiler API](https://github.com/clojure/clojurescript/blob/master/src/main/clojure/cljs/build/api.clj)
+  - The API is static and should not change between versions
+  - ClojureScript compiler versions since [1.7.28](https://github.com/clojure/clojurescript/blob/master/changes.md#1728)
+which included change [CLJS-1367](https://github.com/clojure/clojurescript/commit/9e662c3ea5b9f536f303e9084415e988bf5d0878), should work.
+- Expose ClojureScript compiler options in `.cljs.edn` Boot fileset metadata for
+others tasks (e.g. boot-reload)
+
 ## 1.7.228-2 (18.10.2016)
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-1...1.7.228-2)**

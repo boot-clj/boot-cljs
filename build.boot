@@ -5,13 +5,13 @@
                     [adzerk/boot-test          "1.1.0"  :scope "test"]
                     [pandeiro/boot-http        "0.7.0"  :scope "test"]
                     [org.clojure/clojurescript "1.7.228" :scope "test"]
-                    [ns-tracker                "0.3.0"  :scope "test"]])
+                    [ns-tracker                "0.3.1"  :scope "test"]])
 
 (require '[adzerk.boot-test   :refer [test]]
          '[adzerk.boot-cljs   :refer [cljs]]
          '[pandeiro.boot-http :refer [serve]])
 
-(def +version+ "1.7.228-2")
+(def +version+ "2.0.0-SNAPSHOT")
 
 (task-options!
   pom {:project     'adzerk/boot-cljs
