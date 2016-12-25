@@ -260,8 +260,6 @@
   [e edn      VAL str   "EDN file name."
    r require  VAL [sym] "Vector of namespaces to require."
    f init-fns VAL [sym] "Vector of fuctions to wrap in do block."
-   t target   VAL kw    "Target platform."
-   d closure-defines  VAL {} "A map of closure defines options."
    o compiler-options VAL {} "A map of compiler options."]
    (assert (:edn *opts*) "Must provide an edn file name.")
    (assert (:init-fns *opts*) "Must provide an init-fn.")
@@ -270,9 +268,7 @@
          main   (symbol (namespace init))
          ednstr {:require (:require *opts* [])
                  :init-fns (:init-fns *opts* [])
-                 :compiler-options (:compiler-options *opts*
-                                     {:target (:target *opts*)
-                                      :closure-defines (:closure-defines *opts*)})}
+                 :compiler-options (:compiler-options *opts* {})}
          tmp    (core/tmp-dir!)
          fname  (str edn ".cljs.edn")
          fedn   (io/file tmp fname)]
