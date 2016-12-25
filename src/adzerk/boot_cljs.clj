@@ -265,7 +265,6 @@
    (assert (:init-fns *opts*) "Must provide an init-fn.")
    (let [edn    (:edn *opts*)
          init   (:init-fn *opts*)
-         main   (symbol (namespace init))
          ednstr {:require (:require *opts* [])
                  :init-fns (:init-fns *opts* [])
                  :compiler-options (:compiler-options *opts* {})}
