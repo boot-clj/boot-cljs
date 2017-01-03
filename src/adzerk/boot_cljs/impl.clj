@@ -53,14 +53,18 @@
                   column (format "ERROR: %s at file %s, line %d, column %d\n" message path line column)
                   line (format "ERROR: %s at file %s, line %d\n" message path line)
                   file (format "ERROR: %s at file %s\n" message path)
-                  :else message)]
+                  :else message)
+        cljs-error? (or (= :reader-exception type)
+                        (= :cljs/analysis-error tag))]
 
     (util/serialize-exception
       (ex-info
         message
         (-> data
             (assoc :from :boot-cljs)
-            (cond-> path (assoc :file path)))
+            (cond->
+              path (assoc :file path)
+              (and cljs-error?) (assoc :boot.util/omit-stacktrace? true)))
         (.getCause e)))))
 
 (defn compile-cljs
