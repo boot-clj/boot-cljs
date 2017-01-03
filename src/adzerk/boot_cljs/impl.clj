@@ -3,6 +3,7 @@
             [boot.kahnsort :as kahn]
             [boot.pod :as pod]
             [boot.util :as butil]
+            [clojure.string :as str]
             [cljs.analyzer :as ana]
             [cljs.analyzer.api :as ana-api :refer [empty-state warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
@@ -82,13 +83,20 @@
         handler (fn [warning-type env extra]
                   (when (warning-enabled? warning-type)
                     (when-let [s (ana/error-message warning-type extra)]
-                      (let [path (util/find-original-path source-paths dirs ana/*cljs-file*)]
+                      (let [path (if (= (-> env :ns :name) 'cljs.core)
+                                   "cljs/core.cljs"
+                                   (util/find-original-path source-paths dirs ana/*cljs-file*))
+                            warning-data {:line (:line env)
+                                          :column (:column env)
+                                          :ns (-> env :ns :name)
+                                          :file path
+                                          :type warning-type
+                                          :message s
+                                          :extra extra}]
                         (butil/warn "WARNING: %s %s\n" s (when (:line env)
                                                            (str "at line " (:line env) " " path)))
-                        (swap! warnings conj {:message s
-                                              :file path
-                                              :line (:line env)
-                                              :type warning-type})))))]
+                        (butil/dbug "%s\n" (butil/pp-str warning-data))
+                        (swap! warnings conj warning-data)))))]
     (try
       (build
         (inputs input-path)
