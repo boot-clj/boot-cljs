@@ -67,28 +67,36 @@
    :ex-data (safe-data (ex-data e))
    :stack-trace (mapv #(select-keys (bean %) [:className :methodName :fileName :lineNumber])
                       (.getStackTrace e))
+   :class-name (.getName (class e))
    :cause (if-let [cause (.getCause e)]
             (serialize-exception cause))})
 
 (defn ->StackTraceElement [{:keys [className methodName fileName lineNumber]}]
   (StackTraceElement. className methodName fileName lineNumber))
 
-(defn deserialize-exception
-  "Returns mocked Exception from serialized data.
+(defn maybe-exception-with-name
+  "Try to create Exception with given name, if the class is found
+  and has a constructor with message and cause parameters."
+  [{:keys [class-name message cause]}]
+  (try
+    (-> class-name
+        (Class/forName)
+        (.getDeclaredConstructor (into-array Class [String Throwable]))
+        (.newInstance (to-array [message cause])))
+    (catch Exception _
+      nil)))
 
-   Only overrides getStackTrace, which is used at least by clojure.stacktrace/print-stack-trace
-   and Boot to print the stacktrace. Some other stuff could call directly to
-   printStackTrace."
-  [{:keys [message ex-data stack-trace cause]}]
+(defn deserialize-exception
+  "Re-creates Exception from serialized data, using classes available in current
+  classloader, or when not available, Throwable."
+  [{:keys [message ex-data stack-trace cause] :as data}]
   (let [cause (if cause (deserialize-exception cause))
         stack-trace (into-array StackTraceElement (map ->StackTraceElement stack-trace))]
-    (if ex-data
-      (proxy [ExceptionInfo] [message ex-data cause]
-        (getStackTrace []
-          stack-trace))
-      (proxy [Throwable] [message cause]
-        (getStackTrace []
-          stack-trace)))))
+    (doto (if ex-data
+            (ex-info message ex-data cause)
+            (or (maybe-exception-with-name data)
+                (Throwable. message cause)))
+      (.setStackTrace stack-trace))))
 
 (defn merge-cause-ex-data
   "Merges ex-data from all exceptions in cause stack. First value for a key is
