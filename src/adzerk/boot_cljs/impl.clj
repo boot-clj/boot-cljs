@@ -66,7 +66,7 @@
             (cond->
               path (assoc :file path)
               (and cljs-error?) (assoc :boot.util/omit-stacktrace? true)))
-        (.getCause e)))))
+        e))))
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
