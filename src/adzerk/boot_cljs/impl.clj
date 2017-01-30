@@ -48,6 +48,8 @@
   (let [{:keys [type tag file line column] :as data} (util/merge-cause-ex-data e)
         ; Get the message without location info
         message (.getMessage (util/last-cause e))
+        ; Sometimes filepath is a URI
+        file (str/replace file #"^file:" "")
         file (util/find-original-path source-paths dirs file)
         ; Remove file info from message
         message (if (and file (re-matches #".*in file.*" message))
