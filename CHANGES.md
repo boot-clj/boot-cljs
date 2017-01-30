@@ -9,6 +9,8 @@ which included change [CLJS-1367](https://github.com/clojure/clojurescript/commi
 others tasks (e.g. boot-reload)
 - Hide stacktraces for Cljs compiler exceptions (reader exception, analysis error)
 
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-2...master)**
+
 ## 1.7.228-2 (18.10.2016)
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-1...1.7.228-2)**
