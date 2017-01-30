@@ -60,12 +60,13 @@
 
     (util/serialize-exception
       (ex-info
-        message
+        ;; For now, when Boot shows the message with omit-stacktrace, no newline is automatically appended
+        (if cljs-error? (str message "\n") message)
         (-> data
             (assoc :from :boot-cljs)
             (cond->
               path (assoc :file path)
-              (and cljs-error?) (assoc :boot.util/omit-stacktrace? true)))
+              cljs-error? (assoc :boot.util/omit-stacktrace? true)))
         e))))
 
 (defn compile-cljs
