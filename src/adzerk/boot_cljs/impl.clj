@@ -93,8 +93,10 @@
                                           :type warning-type
                                           :message s
                                           :extra extra}]
-                        (butil/warn "WARNING: %s %s\n" s (when (:line env)
-                                                           (str "at line " (:line env) " " path)))
+                        (butil/warn "WARNING: %s %s\n" s (if (:line env)
+                                                           (str "at line " (:line env) " " path)
+                                                           (when path
+                                                             (str "in file " path))))
                         (butil/dbug "%s\n" (butil/pp-str warning-data))
                         (swap! warnings conj warning-data)))))]
     (try
