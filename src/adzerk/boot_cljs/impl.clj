@@ -48,13 +48,16 @@
   (let [{:keys [type tag file line column] :as data} (util/merge-cause-ex-data e)
         ; Get the message without location info
         message (.getMessage (util/last-cause e))
-        path (util/find-original-path source-paths dirs file)
-        ; Add location info
-        message (cond
-                  column (format "ERROR: %s at file %s, line %d, column %d\n" message path line column)
-                  line (format "ERROR: %s at file %s, line %d\n" message path line)
-                  file (format "ERROR: %s at file %s\n" message path)
-                  :else message)
+        file (util/find-original-path source-paths dirs file)
+        ; Remove file info from message
+        message (if (and file (re-matches #".*in file.*" message))
+                  (first (str/split message #"\s*in file\s*"))
+                  message)
+        ; Add file info with pretty path
+        message (cond-> message
+                  line (str " at line " line)
+                  (and line column) (str ", column " column)
+                  file (str " in file " file))
         cljs-error? (or (= :reader-exception type)
                         (= :cljs/analysis-error tag))]
 
@@ -65,7 +68,7 @@
         (-> data
             (assoc :from :boot-cljs)
             (cond->
-              path (assoc :file path)
+              file (assoc :file file)
               cljs-error? (assoc :boot.util/omit-stacktrace? true)))
         e))))
 
