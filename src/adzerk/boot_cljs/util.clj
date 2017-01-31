@@ -1,10 +1,9 @@
 (ns adzerk.boot-cljs.util
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [boot.file :as file]
-            [clojure.walk :as walk])
-  (:import [clojure.lang ExceptionInfo]
-           [java.io File]))
+            [boot.file :as file])
+  (:import [java.util Base64]
+           [java.io ObjectInputStream ObjectOutputStream ByteArrayOutputStream ByteArrayInputStream]))
 
 (defn path->js
   "Given a path to a CLJS namespace source file, returns the corresponding
@@ -48,55 +47,22 @@
 ;; Exception serialization
 ;;
 
-(defn safe-data [data]
-  (walk/postwalk
-    (fn [x]
-      (cond
-        (instance? File x) (.getPath x)
-        :else x))
-    data))
-
 (defn serialize-exception
-  "Serializes given exception keeping original message, stack-trace, cause stack
-   and ex-data for ExceptionInfo.
-
-   Certain types in ex-data are converted to strings. Currently this includes
-   Files."
+  "Serialize given Object to String using Object Streams and encode the bytes
+  as Base64 string."
   [e]
-  {:message (.getMessage e)
-   :ex-data (safe-data (ex-data e))
-   :stack-trace (mapv #(select-keys (bean %) [:className :methodName :fileName :lineNumber])
-                      (.getStackTrace e))
-   :class-name (.getName (class e))
-   :cause (if-let [cause (.getCause e)]
-            (serialize-exception cause))})
-
-(defn ->StackTraceElement [{:keys [className methodName fileName lineNumber]}]
-  (StackTraceElement. className methodName fileName lineNumber))
-
-(defn maybe-exception-with-name
-  "Try to create Exception with given name, if the class is found
-  and has a constructor with message and cause parameters."
-  [{:keys [class-name message cause]}]
-  (try
-    (-> class-name
-        (Class/forName)
-        (.getDeclaredConstructor (into-array Class [String Throwable]))
-        (.newInstance (to-array [message cause])))
-    (catch Exception _
-      nil)))
+  (with-open [bos (ByteArrayOutputStream.)
+              out (ObjectOutputStream. bos)]
+    (.writeObject out e)
+    (.encodeToString (Base64/getEncoder) (.toByteArray bos))))
 
 (defn deserialize-exception
-  "Re-creates Exception from serialized data, using classes available in current
-  classloader, or when not available, Throwable."
-  [{:keys [message ex-data stack-trace cause] :as data}]
-  (let [cause (if cause (deserialize-exception cause))
-        stack-trace (into-array StackTraceElement (map ->StackTraceElement stack-trace))]
-    (doto (if ex-data
-            (ex-info message ex-data cause)
-            (or (maybe-exception-with-name data)
-                (Throwable. message cause)))
-      (.setStackTrace stack-trace))))
+  "Deserialize given Base64 encoding string using Object Streams and return the
+  Object."
+  [ba]
+  (with-open [bis (ByteArrayInputStream. (.decode (Base64/getDecoder) ba))
+              in  (ObjectInputStream. bis)]
+    (.readObject in)))
 
 (defn merge-cause-ex-data
   "Merges ex-data from all exceptions in cause stack. First value for a key is
