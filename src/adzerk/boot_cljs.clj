@@ -61,12 +61,17 @@
   seq of all compiled JS files known to the CLJS compiler in dependency order,
   as paths relative to the :output-to compiled JS file."
   [{:keys [tmp-src tmp-out main opts] :as ctx} macro-changes pod]
+  ;; (dbug "compile ctx: %s\n" ctx)
+  (dbug "compile tmp-out: %s\n" tmp-out)
   (let [{:keys [output-dir]}  opts
-        rel-path #(.getPath (file/relative-to tmp-out %))]
+        rel-path #(do (dbug "base: %s, file: %s\n" tmp-out %)
+                      %
+                    #_(.getPath (file/relative-to tmp-out %)))]
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/reload-macros!))
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/backdate-macro-dependants! ~output-dir ~macro-changes))
+    (dbug "tmp-src: %s\n" tmp-src)
     (let [{:keys [warnings exception] :as result}
           (pod/with-call-in pod
             (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts))]
@@ -114,6 +119,7 @@
                        compilers
                        (assoc compilers path (make-compiler cljs-edn)))))
   (let [{:keys [pod initial-ctx]} (get @compilers path)
+        ;; _ (dbug "ctx %s\n" initial-ctx)
         ctx (-> initial-ctx
                 (assoc :main (-> (read-cljs-edn cljs-edn)
                                  (assoc :ns-name (:main-ns-name initial-ctx))))
@@ -122,7 +128,9 @@
                 (wrap/modules)
                 wrap/source-map)
         tmp (:tmp-out initial-ctx)
-        out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
+        out (-> ctx :opts :output-to)]
+        ;; out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
+
     (info "• %s\n" out)
     (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint (:opts ctx))))
     (future (compile ctx macro-changes @pod))))
@@ -234,12 +242,14 @@
               results   (try (doall (map deref futures))
                              (catch ExecutionException e
                                (throw (.getCause e))))
+              _ (doseq [r results] (dbug "RESULT: %s\n" r))
               ;; Since each build has its own :output-dir we don't need to do
               ;; anything special to merge dependency ordering of files across
               ;; builds. Each :output-to js file will depend only on compiled
               ;; namespaces in its own :output-dir, including goog/base.js etc.
               dep-order (reduce into [] (map :dep-order results))]
           (reset! prev fileset)
+          (dbug "tmp-result: %s\n" tmp-result)
           (->> (vals @compilers)
                (map #(get-in % [:initial-ctx :tmp-out]))
                (apply core/sync! tmp-result))

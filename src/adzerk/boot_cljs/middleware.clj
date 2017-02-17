@@ -40,6 +40,7 @@
 (defn compiler-options
   [{:keys [opts main] :as ctx}
    {:keys [compiler-options] :as task-options}]
+  (butil/dbug "ctx 2 %s\n" ctx)
   (assoc ctx :opts (merge (:compiler-options main)
                           compiler-options
                           (select-keys task-options [:optimizations :source-map]))))
@@ -49,12 +50,29 @@
     (butil/warn "WARNING: Replacing ClojureScript compiler option %s with automatically set value.\n" k))
   (assoc-in ctx [:opts k] value))
 
+(defn set-output-dir [ctx default-value]
+  (if (not (get-in ctx [:opts :output-dir]))
+    (assoc-in ctx [:opts :output-dir] default-value)
+    (do (butil/dbug "constructing opts output-dir\n")
+        (butil/dbug "ctx: %s\n" ctx)
+        (assoc-in ctx [:opts :output-dir] (str (.getPath (:tmp-out ctx))
+                                               "/" (-> ctx :main :compiler-options :output-dir))))))
+
+(defn set-output-to [ctx default-value]
+  (if (not (get-in ctx [:opts :output-to]))
+    (assoc-in ctx [:opts :output-to] default-value)
+    (do (butil/dbug "constructing opts output-to\n")
+        (butil/dbug "ctx: %s\n" ctx)
+        (assoc-in ctx [:opts :output-to] (str (.getPath (:tmp-out ctx))
+                                               "/" (-> ctx :main :compiler-options :output-to))))))
+
 (defn main
   "Middleware to create the CLJS namespace for the build's .cljs.edn file and
   set the compiler :output-to option accordingly. The :output-to will be derived
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
   [{:keys [tmp-src tmp-out main] :as ctx} write-main?]
+  (butil/dbug "ctx main: %s\n" ctx)
   (let [out-rel-path (cljs-edn-path->output-dir-path (:rel-path main))
         asset-path   (util/get-name out-rel-path)
         out-file     (io/file tmp-out out-rel-path)
@@ -74,8 +92,10 @@
     (-> ctx
         ;; Only update asset-path in not set
         (update-in [:opts :asset-path] #(if % % asset-path))
-        (set-option :output-dir out-path)
-        (set-option :output-to js-path)
+        ;; (set-option :output-dir out-path)
+        (set-output-dir out-path)
+        ;; (set-option :output-to js-path)
+        (set-output-to js-path)
         (set-option :main cljs-ns))))
 
 (defn modules
