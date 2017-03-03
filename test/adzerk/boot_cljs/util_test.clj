@@ -19,18 +19,18 @@
 
 (deftest basic-exception-test
   (let [original (Exception. "foo")
-        a (deserialize-exception (serialize-exception original))]
+        a (deserialize-object (serialize-object original))]
     (is (= "foo" (.getMessage a)))))
 
 (deftest ex-data-test
   (let [original (ex-info "foo" {:a 1})
-        a (deserialize-exception (serialize-exception original))]
+        a (deserialize-object (serialize-object original))]
     (is (= "foo" (.getMessage a)))
     (is (= {:a 1} (ex-data a)))))
 
 (deftest cause-test
   (let [original (Exception. "foo" (Exception. "bar"))
-        a (deserialize-exception (serialize-exception original))]
+        a (deserialize-object (serialize-object original))]
     (is (= "bar" (.getMessage (.getCause a))))))
 
 (defn drop-first-line [s]
@@ -40,11 +40,10 @@
       (->> (string/join "\n"))))
 
 (deftest stack-trace-test
-  ; First line differs as it contains the name of Exception class
   (let [original (Exception. "foo")
-        a (deserialize-exception (serialize-exception original))]
-    (is (= (drop-first-line (with-out-str (st/print-stack-trace original)))
-           (drop-first-line (with-out-str (st/print-stack-trace a)))))))
+        a (deserialize-object (serialize-object original))]
+    (is (= (with-out-str (st/print-stack-trace original))
+           (with-out-str (st/print-stack-trace a))))))
 
 (deftest merge-cause-ex-data-test
   (is (= {:a 1 :b 2} (merge-cause-ex-data (ex-info "a" {:a 1} (ex-info "b" {:b 2}))))))
