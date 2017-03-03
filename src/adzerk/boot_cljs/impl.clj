@@ -103,7 +103,7 @@
                                                            (str "at line " (:line env) " " path)
                                                            (when path
                                                              (str "in file " path))))
-                        (butil/dbug "%s\n" (butil/pp-str warning-data))
+                        (butil/dbug* "%s\n" (butil/pp-str warning-data))
                         (swap! warnings conj warning-data)))))]
     (try
       (build
