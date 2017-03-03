@@ -98,23 +98,23 @@
                                           :file path
                                           :type warning-type
                                           :message s
-                                          :extra extra}]
+                                          :extra (cond-> extra
+                                                   (:fexpr extra) (update :fexpr dissoc :env))}]
                         (butil/warn "WARNING: %s %s\n" s (if (:line env)
                                                            (str "at line " (:line env) " " path)
                                                            (when path
                                                              (str "in file " path))))
                         (butil/dbug* "%s\n" (butil/pp-str warning-data))
                         (swap! warnings conj warning-data)))))]
-    (util/serialize-object
-      (try
-        (build
-          (inputs input-path)
-          (assoc opts :warning-handlers [handler])
-          stored-env)
-        {:warnings  @warnings
-         :dep-order (dep-order stored-env opts)}
-        (catch Exception e
-          {:exception (handle-ex e source-paths dirs)})))))
+    (try
+      (build
+        (inputs input-path)
+        (assoc opts :warning-handlers [handler])
+        stored-env)
+      {:warnings  @warnings
+       :dep-order (dep-order stored-env opts)}
+      (catch Exception e
+        {:exception (util/serialize-object (handle-ex e source-paths dirs))}))))
 
 (def tracker (atom nil))
 
