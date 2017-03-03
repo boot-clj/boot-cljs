@@ -98,6 +98,9 @@
                                           :file path
                                           :type warning-type
                                           :message s
+                                          ;; :fn-deprecated warning contains the whole
+                                          ;; analyze result as extra data, and :env value
+                                          ;; of that is unprintable.
                                           :extra (cond-> extra
                                                    (:fexpr extra) (update :fexpr dissoc :env))}]
                         (butil/warn "WARNING: %s %s\n" s (if (:line env)
