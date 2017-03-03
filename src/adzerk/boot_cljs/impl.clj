@@ -35,7 +35,8 @@
   (->> (cljs-depdendency-graph env)
        (kahn/topo-sort)
        reverse
-       (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))))
+       (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))
+       vec))
 
 (defn handle-ex
   "Rethrows an interesting exception if possible or the original exception.
@@ -63,16 +64,15 @@
         cljs-error? (or (= :reader-exception type)
                         (= :cljs/analysis-error tag))]
 
-    (util/serialize-exception
-      (ex-info
-        ;; For now, when Boot shows the message with omit-stacktrace, no newline is automatically appended
-        (if cljs-error? (str message "\n") message)
-        (-> data
-            (assoc :from :boot-cljs)
-            (cond->
-              file (assoc :file file)
-              cljs-error? (assoc :boot.util/omit-stacktrace? true)))
-        e))))
+    (ex-info
+      ;; For now, when Boot shows the message with omit-stacktrace, no newline is automatically appended
+      (if cljs-error? (str message "\n") message)
+      (-> data
+          (assoc :from :boot-cljs)
+          (cond->
+            file (assoc :file file)
+            cljs-error? (assoc :boot.util/omit-stacktrace? true)))
+      e)))
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
@@ -105,15 +105,16 @@
                                                              (str "in file " path))))
                         (butil/dbug* "%s\n" (butil/pp-str warning-data))
                         (swap! warnings conj warning-data)))))]
-    (try
-      (build
-        (inputs input-path)
-        (assoc opts :warning-handlers [handler])
-        stored-env)
-      {:warnings  @warnings
-       :dep-order (dep-order stored-env opts)}
-      (catch Exception e
-        {:exception (handle-ex e source-paths dirs)}))))
+    (util/serialize-object
+      (try
+        (build
+          (inputs input-path)
+          (assoc opts :warning-handlers [handler])
+          stored-env)
+        {:warnings  @warnings
+         :dep-order (dep-order stored-env opts)}
+        (catch Exception e
+          {:exception (handle-ex e source-paths dirs)})))))
 
 (def tracker (atom nil))
 

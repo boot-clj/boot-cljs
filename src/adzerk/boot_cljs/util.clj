@@ -44,10 +44,10 @@
     filepath))
 
 ;;
-;; Exception serialization
+;; Object serialization
 ;;
 
-(defn serialize-exception
+(defn serialize-object
   "Serialize given Object to String using Object Streams and encode the bytes
   as Base64 string."
   [e]
@@ -56,7 +56,7 @@
     (.writeObject out e)
     (.encodeToString (Base64/getEncoder) (.toByteArray bos))))
 
-(defn deserialize-exception
+(defn deserialize-object
   "Deserialize given Base64 encoding string using Object Streams and return the
   Object."
   [ba]

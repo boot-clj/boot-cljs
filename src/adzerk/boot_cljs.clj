@@ -68,11 +68,12 @@
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/backdate-macro-dependants! ~output-dir ~macro-changes))
     (let [{:keys [warnings exception] :as result}
-          (pod/with-call-in pod
-            (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts))]
+          (util/deserialize-object
+            (pod/with-call-in pod
+              (adzerk.boot-cljs.impl/compile-cljs ~(.getPath tmp-src) ~opts)))]
       (swap! core/*warnings* + (or (count warnings) 0))
       (when exception
-        (throw (util/deserialize-exception exception)))
+        (throw exception))
       (-> result
           (update-in [:dep-order] #(->> (conj % (:output-to opts)) (map rel-path)))
           (assoc :opts opts)))))
