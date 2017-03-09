@@ -88,7 +88,7 @@
         (io/make-parents)
         (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns)))))
     (-> ctx
-        ;; Only update asset-path in not set
+        ;; Only update asset-path if not set
         (update-in [:opts :asset-path] #(if % % asset-path))
         (set-output-dir out-path)
         (set-output-to js-path)
