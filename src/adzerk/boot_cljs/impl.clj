@@ -105,8 +105,7 @@
                                                              (str "in file " path))))
                         (butil/dbug "%s\n" (butil/pp-str warning-data))
                         (swap! warnings conj warning-data)))))]
-    (butil/dbug "COMPILING opts: %s\n" opts)
-    (butil/dbug "COMPILING stored-env: %s\n" stored-env)
+;;    (butil/dbug "COMPILING stored-env: %s\n" @stored-env)
     (try
       (build
         (inputs input-path)

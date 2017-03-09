@@ -72,7 +72,6 @@
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
   [{:keys [tmp-src tmp-out main] :as ctx} write-main?]
-  (butil/dbug "ctx main: %s\n" ctx)
   (let [out-rel-path (cljs-edn-path->output-dir-path (:rel-path main))
         asset-path   (util/get-name out-rel-path)
         out-file     (io/file tmp-out out-rel-path)
@@ -92,9 +91,7 @@
     (-> ctx
         ;; Only update asset-path in not set
         (update-in [:opts :asset-path] #(if % % asset-path))
-        ;; (set-option :output-dir out-path)
         (set-output-dir out-path)
-        ;; (set-option :output-to js-path)
         (set-output-to js-path)
         (set-option :main cljs-ns))))
 
