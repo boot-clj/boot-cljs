@@ -62,7 +62,7 @@
   as paths relative to the :output-to compiled JS file."
   [{:keys [tmp-src tmp-out main opts] :as ctx} macro-changes pod]
   (let [{:keys [output-dir]}  opts
-        rel-path %]
+        rel-path identity]
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/reload-macros!))
     (pod/with-call-in pod
