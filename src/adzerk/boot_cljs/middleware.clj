@@ -40,7 +40,6 @@
 (defn compiler-options
   [{:keys [opts main] :as ctx}
    {:keys [compiler-options] :as task-options}]
-  (butil/dbug "ctx 2 %s\n" ctx)
   (assoc ctx :opts (merge (:compiler-options main)
                           compiler-options
                           (select-keys task-options [:optimizations :source-map]))))

@@ -61,7 +61,6 @@
   seq of all compiled JS files known to the CLJS compiler in dependency order,
   as paths relative to the :output-to compiled JS file."
   [{:keys [tmp-src tmp-out main opts] :as ctx} macro-changes pod]
-  (dbug "compile ctx: %s\n" ctx)
   (let [{:keys [output-dir]}  opts
         rel-path %]
     (pod/with-call-in pod
@@ -235,7 +234,6 @@
               results   (try (doall (map deref futures))
                              (catch ExecutionException e
                                (throw (.getCause e))))
-              _ (doseq [r results] (dbug "RESULT: %s\n" r))
               ;; Since each build has its own :output-dir we don't need to do
               ;; anything special to merge dependency ordering of files across
               ;; builds. Each :output-to js file will depend only on compiled
