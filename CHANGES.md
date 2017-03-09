@@ -8,6 +8,9 @@ which included change [CLJS-1367](https://github.com/clojure/clojurescript/commi
 - Expose ClojureScript compiler options in `.cljs.edn` Boot fileset metadata for
 others tasks (e.g. boot-reload)
 - Task to generate `.cljs.edn` file during build, output to fileset.
+- Hide stacktraces for Cljs compiler exceptions (reader exception, analysis error)
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-2...master)**
 
 ## 1.7.228-2 (18.10.2016)
 
