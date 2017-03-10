@@ -1,4 +1,4 @@
-## Unreleased
+## 2.0.0 (10.3.2017)
 
 - Stop following ClojureScript compiler version number
   - Boot-cljs uses the [public compiler API](https://github.com/clojure/clojurescript/blob/master/src/main/clojure/cljs/build/api.clj)
