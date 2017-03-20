@@ -56,7 +56,7 @@
   foo.bar CLJS namespace with output to foo/bar.js)."
   [{:keys [tmp-src tmp-out main] :as ctx} write-main?]
   (let [out-rel-path (cljs-edn-path->output-dir-path (:rel-path main))
-        asset-path   (util/get-name out-rel-path)
+        asset-path   out-rel-path
         out-file     (io/file tmp-out out-rel-path)
         out-path     (.getPath out-file)
         js-path      (util/path tmp-out (cljs-edn-path->js-path (:rel-path main)))
