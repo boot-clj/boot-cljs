@@ -105,12 +105,10 @@
   (if-not (:source-map opts)
     ctx
     (let [optimizations (:optimizations opts :none)
-          sm  (-> opts :output-to (str ".map"))
-          dir (.getName (io/file (:output-dir opts)))]
+          sm (-> opts :output-to (str ".map"))]
       ; Under :none optimizations only true and false are valid values:
       ; https://github.com/clojure/clojurescript/wiki/Compiler-Options#source-map
       ; If modules are used, should be true.
       (update-in ctx [:opts] assoc
                  :optimizations optimizations
-                 :source-map (if (or (= optimizations :none) (:modules opts)) true sm)
-                 :source-map-path dir))))
+                 :source-map (if (or (= optimizations :none) (:modules opts)) true sm)))))
