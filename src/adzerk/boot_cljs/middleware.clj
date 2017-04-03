@@ -65,6 +65,11 @@
         cljs-ns      (symbol (util/path->ns cljs-path))
         init-fns     (:init-fns main)
         requires     (into (sorted-set) (:require main))
+        ;; We set out own shim ns as :main, but if user provides :main,
+        ;; include that in our shim ns requires
+        requires     (if-let [main (:main (:opts ctx))]
+                       (conj requires main)
+                       requires)
         init-nss     (into requires (->> init-fns (keep namespace) (map symbol)))]
     (.mkdirs out-file)
     (when write-main?
@@ -76,7 +81,7 @@
         (update-in [:opts :asset-path] #(if % % asset-path))
         (set-option :output-dir out-path)
         (set-option :output-to js-path)
-        (set-option :main cljs-ns))))
+        (assoc-in [:opts :main] cljs-ns))))
 
 (defn modules
   "If .cljs.edn file contains modules declaration, use it to create options
