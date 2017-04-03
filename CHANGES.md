@@ -6,6 +6,10 @@
 - Use provided `:output-dir` and `:output-to` and set default values based on path of `.cljs.edn`, like previously ([#104](https://github.com/boot-clj/boot-cljs/issues/104))
 - Drop support for `.cljs.edn` `:modules` option (with warning) and instead handle `:output-to` paths in
 `:modules` under `:compiler-options`
+- If project dependencies have changed, add new dependencies to Boot-cljs pods ([#95](https://github.com/boot-clj/boot-cljs/issues/95))
+  - E.g. `(boot.core/set-env! :dependencies #(conj % '[com.andrewmcveigh/cljs-time "0.4.0"]))`
+  can be used to add `cljs-time` dependency and Boot-cljs will find this without restarting
+  the whole Boot process.
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.0.0...master)**
 

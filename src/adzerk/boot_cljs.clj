@@ -93,10 +93,13 @@
           select
           (sort-by :path))))
 
+(defn- new-env [tmp-src]
+  (-> (core/get-env)
+      (update-in [:dependencies] into @deps)
+      (update-in [:directories] conj (.getPath tmp-src))) )
+
 (defn- new-pod! [tmp-src]
-  (let [env (-> (core/get-env)
-                (update-in [:dependencies] into @deps)
-                (update-in [:directories] conj (.getPath tmp-src)))]
+  (let [env (new-env tmp-src)]
     (future (doto (pod/make-pod env) assert-clojure-version!))))
 
 (defn- make-compiler
@@ -108,11 +111,12 @@
                    :main-ns-name (name (gensym "main"))}}))
 
 (defn- compile-1
-  [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn}]
+  [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn} deps-changed?]
   (swap! compilers (fn [compilers]
                      (if (contains? compilers path)
                        compilers
                        (assoc compilers path (make-compiler cljs-edn)))))
+
   (let [{:keys [pod initial-ctx]} (get @compilers path)
         ctx (-> initial-ctx
                 (assoc :main (-> (read-cljs-edn cljs-edn)
@@ -123,6 +127,10 @@
                 wrap/source-map)
         tmp (:tmp-out initial-ctx)
         out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
+
+    (when deps-changed?
+      (pod/add-dependencies-in @pod (new-env (:tmp-src initial-ctx))))
+
     (info "• %s\n" out)
     (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint (:opts ctx))))
     (future (compile ctx macro-changes @pod))))
@@ -211,7 +219,8 @@
 
   (let [tmp-result (core/tmp-dir!)
         compilers  (atom {})
-        prev       (atom nil)]
+        prev       (atom nil)
+        prev-deps  (atom (core/get-env :dependencies))]
     (comp
       (default-main :ids ids)
       (core/with-pre-wrap fileset
@@ -224,10 +233,18 @@
               macro-changes (macro-files-changed diff)
               cljs-edns (main-files fileset ids)
               changed-cljs-edns (->> diff core/input-files (core/by-ext [".cljs.edn"]) set)
+
+              ;; Check if the dependencies have changed since last time
+              new-deps (core/get-env :dependencies)
+              deps-changed? (not= @prev-deps new-deps)
+              _ (when deps-changed?
+                  (info "Project dependencies have changed, updating Boot-cljs pods...\n"))
+              _ (reset! prev-deps new-deps)
+
               ;; Force realization to start compilation
               futures   (doall (map (fn [cljs-edn]
                                       (let [write-main? (contains? changed-cljs-edns cljs-edn)]
-                                        (compile-1 compilers *opts* macro-changes write-main? cljs-edn)))
+                                        (compile-1 compilers *opts* macro-changes write-main? cljs-edn deps-changed?)))
                                     cljs-edns))
               ;; Wait for all compilations to finish
               ;; Remove unnecessary layer of cause stack added by futures
