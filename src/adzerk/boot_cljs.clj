@@ -62,7 +62,7 @@
   as paths relative to the :output-to compiled JS file."
   [{:keys [tmp-src tmp-out main opts] :as ctx} macro-changes pod]
   (let [{:keys [output-dir]}  opts
-        rel-path #(.getPath (file/relative-to tmp-out %))]
+        rel-path identity]
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/reload-macros!))
     (pod/with-call-in pod
@@ -122,7 +122,7 @@
                 (wrap/modules)
                 wrap/source-map)
         tmp (:tmp-out initial-ctx)
-        out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
+        out (-> ctx :opts :output-to)]
     (info "• %s\n" out)
     (dbug "CLJS options:\n%s\n" (with-out-str (pp/pprint (:opts ctx))))
     (future (compile ctx macro-changes @pod))))
