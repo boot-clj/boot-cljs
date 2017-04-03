@@ -3,6 +3,7 @@
 - Require `:main` namespace in our shim ns requires ([#139](https://github.com/boot-clj/boot-cljs/issues/139))
 - Don't set `:source-map-path` automatically ([#157](https://github.com/boot-clj/boot-cljs/pull/157), [#136](https://github.com/boot-clj/boot-cljs/issues/136))
 - Use relative path of `.cljs.edn` for asset-path instead of name of the file ([#156](https://github.com/boot-clj/boot-cljs/pull/156), [#152](https://github.com/boot-clj/boot-cljs/issues/152))
+- Use provided `:output-dir` and `:output-to` and set default values based on path of `.cljs.edn`, like previously ([#104](https://github.com/boot-clj/boot-cljs/issues/104))
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.0.0...master)**
 

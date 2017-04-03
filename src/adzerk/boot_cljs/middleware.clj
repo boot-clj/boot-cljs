@@ -55,11 +55,16 @@
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
   [{:keys [tmp-src tmp-out main] :as ctx} write-main?]
-  (let [out-rel-path (cljs-edn-path->output-dir-path (:rel-path main))
+  (let [out-rel-path (if-let [output-dir (:output-dir (:opts ctx))]
+                       output-dir
+                       (cljs-edn-path->output-dir-path (:rel-path main)))
         asset-path   out-rel-path
         out-file     (io/file tmp-out out-rel-path)
         out-path     (.getPath out-file)
-        js-path      (util/path tmp-out (cljs-edn-path->js-path (:rel-path main)))
+        js-path      (if-let [output-to (:output-to (:opts ctx))]
+                       (util/path tmp-out output-to)
+                       (util/path tmp-out (cljs-edn-path->js-path (:rel-path main))))
+
         cljs-path    (util/path "boot" "cljs" (str (:ns-name main) ".cljs"))
         cljs-file    (io/file tmp-src cljs-path)
         cljs-ns      (symbol (util/path->ns cljs-path))
@@ -77,10 +82,9 @@
         (io/make-parents)
         (spit (format-ns-forms (main-ns-forms cljs-ns init-nss init-fns)))))
     (-> ctx
-        ;; Only update asset-path in not set
         (update-in [:opts :asset-path] #(if % % asset-path))
-        (set-option :output-dir out-path)
-        (set-option :output-to js-path)
+        (assoc-in [:opts :output-dir] out-path)
+        (assoc-in [:opts :output-to] js-path)
         (assoc-in [:opts :main] cljs-ns))))
 
 (defn modules
