@@ -49,6 +49,22 @@
     (butil/warn "WARNING: Replacing ClojureScript compiler option %s with automatically set value.\n" k))
   (assoc-in ctx [:opts k] value))
 
+(defn set-output-dir [ctx default-value]
+  (if (not (get-in ctx [:opts :output-dir]))
+    (assoc-in ctx [:opts :output-dir] default-value)
+    (do (butil/dbug "constructing opts output-dir\n")
+        (butil/dbug "ctx: %s\n" ctx)
+        (assoc-in ctx [:opts :output-dir] (str (.getPath (:tmp-out ctx))
+                                               "/" (-> ctx :main :compiler-options :output-dir))))))
+
+(defn set-output-to [ctx default-value]
+  (if (not (get-in ctx [:opts :output-to]))
+    (assoc-in ctx [:opts :output-to] default-value)
+    (do (butil/dbug "constructing opts output-to\n")
+        (butil/dbug "ctx: %s\n" ctx)
+        (assoc-in ctx [:opts :output-to] (str (.getPath (:tmp-out ctx))
+                                               "/" (-> ctx :main :compiler-options :output-to))))))
+
 (defn main
   "Middleware to create the CLJS namespace for the build's .cljs.edn file and
   set the compiler :output-to option accordingly. The :output-to will be derived
@@ -74,8 +90,8 @@
     (-> ctx
         ;; Only update asset-path in not set
         (update-in [:opts :asset-path] #(if % % asset-path))
-        (set-option :output-dir out-path)
-        (set-option :output-to js-path)
+        (set-output-dir out-path)
+        (set-output-to js-path)
         (set-option :main cljs-ns))))
 
 (defn modules
