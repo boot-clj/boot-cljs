@@ -14,6 +14,6 @@ dependencies:
     - boot show -d
 test:
   override:
-    - boot run-tests -j junit
+    - boot test -j junit
     - mkdir -p $CIRCLE_TEST_REPORTS/junit/
     - find . -type f -regex ".*/target/junit/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \;

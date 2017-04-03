@@ -7,7 +7,7 @@
                     [org.clojure/clojurescript "1.7.228" :scope "test"]
                     [ns-tracker "0.3.1" :scope "test"]])
 
-(require '[adzerk.boot-test   :refer [test]]
+(require '[adzerk.boot-test]
          '[adzerk.boot-cljs   :refer [cljs]]
          '[pandeiro.boot-http :refer [serve]])
 
@@ -21,13 +21,16 @@
        :scm         {:url "https://github.com/adzerk/boot-cljs"}
        :license     {"EPL" "http://www.eclipse.org/legal/epl-v10.html"}})
 
-(deftask run-tests
+(ns-unmap *ns* 'test)
+
+(deftask test
   [O optimizations   LEVEL kw  "Compiler optimization level."
    j junit-output-to JUNIT str "Test report destination."]
   (comp (serve)
         (cljs :optimizations (or optimizations :whitespace))
-        (test :namespaces #{'adzerk.boot-cljs-test 'adzerk.boot-cljs.util-test}
-              :junit-output-to junit-output-to)))
+        (adzerk.boot-test/test
+          :namespaces #{'adzerk.boot-cljs-test 'adzerk.boot-cljs.util-test}
+          :junit-output-to junit-output-to)))
 
 (deftask build []
   (comp
