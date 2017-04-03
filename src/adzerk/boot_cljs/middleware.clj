@@ -88,24 +88,25 @@
         (assoc-in [:opts :main] cljs-ns))))
 
 (defn modules
-  "If .cljs.edn file contains modules declaration, use it to create options
-  to ClojureScript compiler. Output-to values are generated for modules
-  based on relative path of .cljs.edn file and key of the module.
+  "Updates :modules :output-to paths under :compiler-options
 
-  Cljs-base module is written to the path of .cljs.edn (similar to how
-  output-to is set without modules).
+  If module declaration has :output-to, the path is prepended with
+  path to Boot-cljs temp directory.
 
-  Example, js/main.cljs.edn with modules declaration will setup following options:
-  :modules {:cljs-base {:output-to \"<tmp-dir>/js/main.js\"}
-            :common    {:output-to \"<tmp-dir>/js/main/common.js\" ...}
-            :core      {:output-to \"<tmp-dir>/js/main/core.js\" ...}}"
+  If :output-to is not set, default value is created based on
+  the temp directory, relative path of the .cljs.edn file and module name."
   [{:keys [tmp-out main] :as ctx}]
-  (if-let [modules (:modules main)]
-    (set-option ctx :modules (assoc (into {} (map (fn [[k v]]
-                                                    (let [js-path (util/path tmp-out (cljs-edn-path->module-path (:rel-path main) k))]
-                                                      [k (assoc v :output-to js-path)]))
-                                                  modules))
-                                    :cljs-base {:output-to (:output-to (:opts ctx))}))
+  (when (:modules main)
+    (butil/warn "WARNING: .cljs.edn :modules option is no longer supported, please set :modules under :compiler-options.\n"))
+  (if (contains? (:opts ctx) :modules)
+    (update-in ctx [:opts :modules]
+               (fn [modules]
+                 (into (empty modules)
+                       (fn [[k v]]
+                         [k (if-let [output-to (:output-to v)]
+                              (assoc v :output-to (util/path tmp-out output-to))
+                              (assoc v :output-to (util/path tmp-out (cljs-edn-path->module-path (:rel-path main) k))))])
+                       modules)))
     ctx))
 
 (defn source-map

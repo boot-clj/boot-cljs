@@ -19,6 +19,8 @@ use `:require` to initialize themselves.
 3. `:optimizations` and `:source-map` task options
 4. options automatically set by boot-cljs (`:output-dir`, `:output-to`, `:main`)
 
+TODO: add support for merging `:closure-defines` and other map options [#135](https://github.com/boot-clj/boot-cljs/issues/135)
+
 ## `:output-dir` & `:output-to`
 
 If these options are set, path of Boot-cljs temp dir is prepended into these.
@@ -53,8 +55,6 @@ not `:none` and `:modules` is not used, `:source-map` is automatically set to
 `:output-to` with `.map` prepended.
 
 ## `:modules`
-
-TODO:
 
 Should work similar to `:output-to`. If user provides a value, it is prepended with
 path to Boot-cljs temp dir, else default value is created based on relative path of `.cljs.edn`
