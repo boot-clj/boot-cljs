@@ -102,13 +102,14 @@
 (defn source-map
   "Middleware to configure source map related CLJS compiler options."
   [{:keys [opts] :as ctx}]
-  (if-not (:source-map opts)
-    ctx
+  (if (contains? opts :source-map)
     (let [optimizations (:optimizations opts :none)
-          sm (-> opts :output-to (str ".map"))]
-      ; Under :none optimizations only true and false are valid values:
-      ; https://github.com/clojure/clojurescript/wiki/Compiler-Options#source-map
-      ; If modules are used, should be true.
-      (update-in ctx [:opts] assoc
-                 :optimizations optimizations
-                 :source-map (if (or (= optimizations :none) (:modules opts)) true sm)))))
+          sm (-> opts :output-to (str ".map"))
+          ; Under :none optimizations only true and false are valid values
+          ; Same if :modules is used.
+          ; https://github.com/clojure/clojurescript/wiki/Compiler-Options#source-map
+          sm  (if (or (= optimizations :none) (:modules opts))
+                (boolean (:source-map opts))
+                sm)]
+      (assoc-in ctx [:opts :source-map] sm))
+    ctx))
