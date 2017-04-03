@@ -7,7 +7,7 @@ support some additional features of Boot-cljs.
 Example of first case is `:output-to` and `:output-dir`. These filepaths need to
 be under temp directory managed by Boot-cljs.
 
-Example of second case if `:main` namespace. Boot-cljs writes it's own main namespace
+Example of second case is `:main` namespace. Boot-cljs writes it's own main namespace
 because we need to support multiple `:require` namespaces from `.cljs.edn` files. This
 is important because other tools ([boot-reload](https://github.com/adzerk-oss/boot-reload))
 use `:require` to initialize themselves.
@@ -17,7 +17,7 @@ use `:require` to initialize themselves.
 1. `:compiler-options` in `.cljs.edn` file
 2. `:compiler-options` task option
 3. `:optimizations` and `:source-map` task options
-4. options automatically set by boot-cljs (`:output-dir`, `:output-to`, `:main`)"
+4. options automatically set by boot-cljs (`:output-dir`, `:output-to`, `:main`)
 
 ## `:output-dir` & `:output-to`
 
@@ -41,7 +41,7 @@ option, and is thus required by the Boot-cljs main namespace. This should usuall
 work nearly the same as without Boot-cljs main namespace, but this keeps the support
 for Boot-reload and others to use `:require`.
 
-Note: It could be possible for Boot-reload & co. to be set up using `:preloads`, but
+Note: It would be possible for Boot-reload to use `:preloads` instead of `:require`, but
 that would change the loading order and cause problems with current implementation
 of Boot-reload (check [#143](https://github.com/boot-clj/boot-cljs/pull/143) for some
 information.)
