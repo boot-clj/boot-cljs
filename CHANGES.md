@@ -1,3 +1,11 @@
+## Unreleased
+
+- Require `:main` namespace in our shim ns requires ([#139](https://github.com/boot-clj/boot-cljs/issues/139))
+- Don't set `:source-map-path` automatically ([#157](https://github.com/boot-clj/boot-cljs/pull/157), [#136](https://github.com/boot-clj/boot-cljs/issues/136))
+- Use relative path of `.cljs.edn` for asset-path instead of name of the file ([#156](https://github.com/boot-clj/boot-cljs/pull/156), [#152](https://github.com/boot-clj/boot-cljs/issues/152))
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.0.0...master)**
+
 ## 2.0.0 (10.3.2017)
 
 - Stop following ClojureScript compiler version number
@@ -9,7 +17,7 @@ which included change [CLJS-1367](https://github.com/clojure/clojurescript/commi
 others tasks (e.g. boot-reload)
 - Hide stacktraces for Cljs compiler exceptions (reader exception, analysis error)
 
-**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-2...master)**
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/1.7.228-2...2.0.0)**
 
 ## 1.7.228-2 (18.10.2016)
 
