@@ -1,4 +1,4 @@
-# boot-cljs [![Clojars Project](https://img.shields.io/clojars/v/adzerk/boot-cljs.svg)](https://clojars.org/adzerk/boot-cljs) [![Circle CI](https://circleci.com/gh/adzerk-oss/boot-cljs.svg?style=shield)](https://circleci.com/gh/adzerk-oss/boot-cljs) [![Downloads](https://jarkeeper.com/adzerk/boot-cljs/downloads.svg)](https://jarkeeper.com/adzerk/boot-cljs)
+# boot-cljs [![Clojars Project](https://img.shields.io/clojars/v/adzerk/boot-cljs.svg)](https://clojars.org/adzerk/boot-cljs) [![Circle CI](https://circleci.com/gh/boot-clj/boot-cljs.svg?style=shield)](https://circleci.com/gh/boot-clj/boot-cljs) [![Downloads](https://jarkeeper.com/adzerk/boot-cljs/downloads.svg)](https://jarkeeper.com/adzerk/boot-cljs)
 
 [Boot](http://boot-clj.com/) task to compile ClojureScript applications.
 
