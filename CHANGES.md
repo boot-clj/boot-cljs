@@ -10,6 +10,7 @@
   - E.g. `(boot.core/set-env! :dependencies #(conj % '[com.andrewmcveigh/cljs-time "0.4.0"]))`
   can be used to add `cljs-time` dependency and Boot-cljs will find this without restarting
   the whole Boot process.
+- Add validation for Boot-cljs `.cljs.edn` options ([#148](https://github.com/boot-clj/boot-cljs/issues/148))
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.0.0...master)**
 
