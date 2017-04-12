@@ -238,7 +238,8 @@
   [i ids IDS               #{str} ""
    O optimizations LEVEL   kw   "The optimization level."
    s source-map            bool "Create source maps for compiled JS."
-   c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler."]
+   c compiler-options OPTS edn  "Options to pass to the Clojurescript compiler."
+   n npm-deps DEPS         edn  "Dependencies to pass to the Clojurescript compiler"]
 
   (let [tmp-result (core/tmp-dir!)
         compilers  (atom {})

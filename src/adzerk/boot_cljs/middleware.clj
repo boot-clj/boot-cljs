@@ -42,7 +42,7 @@
    {:keys [compiler-options] :as task-options}]
   (assoc ctx :opts (merge (:compiler-options main)
                           compiler-options
-                          (select-keys task-options [:optimizations :source-map]))))
+                          (select-keys task-options [:optimizations :source-map :npm-deps]))))
 
 (defn set-option [ctx k value]
   (when-let [current-value (get-in ctx [:opts k])]
