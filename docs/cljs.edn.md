@@ -41,3 +41,13 @@ Collection of namespaces to require in Boot-cljs generated main namespace.
 Collection of functions (namespaced symbols) to call from Boot-cljs main namespace,
 called after all the `:require` namespaces are loaded.
 Namespaces of these symbols are automatically added to `:require`.
+
+## `:clj-init`
+
+Code which should be evaluated when Cljs compiler pod is created. This can be used to
+`require` Clojure namespaces which provide [`js-transforms`](https://clojurescript.org/guides/javascript-modules#babel-transforms)
+multimethod. The code should be provided as quoted form:
+
+```clj
+:clj-init '(do (require 'my.project.jsx-transform))
+```

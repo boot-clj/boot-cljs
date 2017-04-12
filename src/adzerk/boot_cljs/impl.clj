@@ -74,10 +74,28 @@
             cljs-error? (assoc :boot.util/omit-stacktrace? true)))
       e)))
 
+(defn load-js-transforms! [opts]
+  ;; TODO: deps.cljs from classpath
+  (doseq [{:keys [preprocess]} (:foreign-libs opts)
+          ;; Check if preprocess value is namespaced keyword
+          :when (and (keyword? preprocess) (namespace preprocess))
+          ;; Only require the namespace if it not already loaded
+          ;; TODO: Do we need to care about reloading changed namespaces?
+          :when (not (find-ns (symbol (namespace preprocess))))]
+    (try
+      (require (symbol (namespace preprocess)))
+      (butil/info "Loaded namespace %s for js-transforms multimethod\n" (namespace preprocess))
+      (catch Exception e
+        (butil/warn "Couldn't load namespace %s for js-transforms multimethod: %s\n" (namespace preprocess) (.getMessage e))))))
+
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
   opts, compiles the CLJS to produce JS files."
   [input-path {:keys [optimizations] :as opts}]
+
+  ;; TODO: Run here or in new-pod?
+  (load-js-transforms! opts)
+
   ;; So directories need to be passed to cljs compiler when compiling in dev
   ;; or there are stale namespace problems with tests. However, if compiling
   ;; with optimizations other than :none adding directories will break the

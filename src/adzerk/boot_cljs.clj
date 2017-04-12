@@ -61,7 +61,7 @@
   seq of all compiled JS files known to the CLJS compiler in dependency order,
   as paths relative to the :output-to compiled JS file."
   [{:keys [tmp-src tmp-out main opts] :as ctx} macro-changes pod]
-  (let [{:keys [output-dir]}  opts
+  (let [{:keys [output-dir]} opts
         rel-path #(.getPath (file/relative-to tmp-out %))]
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/reload-macros!))
@@ -100,7 +100,12 @@
 
 (defn- new-pod! [tmp-src]
   (let [env (new-env tmp-src)]
-    (future (doto (pod/make-pod env) assert-clojure-version!))))
+    (future
+      (doto (pod/make-pod env)
+        assert-clojure-version!
+        ;; TODO: Add code here to initialize pod with optional code (eval)
+        ;; and js-transforms requires (or perhaps it is easier to handle those in compile-cljs)
+        ))))
 
 (defn- make-compiler
   [cljs-edn]
