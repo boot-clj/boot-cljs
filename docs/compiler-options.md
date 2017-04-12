@@ -19,7 +19,21 @@ use `:require` to initialize themselves.
 3. `:optimizations` and `:source-map` task options
 4. options automatically set by boot-cljs (`:output-dir`, `:output-to`, `:main`)
 
-TODO: add support for merging `:closure-defines` and other map options [#135](https://github.com/boot-clj/boot-cljs/issues/135)
+## Meta-merge
+
+It is possible to use [meta-merge](https://github.com/weavejester/meta-merge)
+to control how different values are merged. For example to merge
+`:closure-defines` maps from task-options and `.cljs.edn`:
+
+
+```clj
+(cljs :compiler-options {:closure-defines {'frontend.core/MODE "dev"}})
+```
+
+`.cljs.edn`
+```edn
+{:compiler-options {:closure-defines {frontend.core/FOO "bar"}}}
+```
 
 ## `:output-dir` & `:output-to`
 

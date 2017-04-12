@@ -48,5 +48,13 @@ when porting a project.
 Copyright © 2014 Adzerk<br>
 Copyright © 2015-2017 Juho Teperi
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
+
+### Meta-merge
+
+Uses copied code from [meta-merge](https://github.com/weavejester/meta-merge) with
+following notice:
+
+Copyright © 2016 Phil Hagelberg, James Reeves and all the Leiningen contributors.
+
+Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.

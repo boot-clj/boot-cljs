@@ -11,6 +11,9 @@
   can be used to add `cljs-time` dependency and Boot-cljs will find this without restarting
   the whole Boot process.
 - Add validation for Boot-cljs `.cljs.edn` options ([#148](https://github.com/boot-clj/boot-cljs/issues/148))
+- Use [meta-merge](https://github.com/weavejester/meta-merge) to merge compiler-options from task
+options and `.cljs.edn` file, to allow control of how to merge collection options,
+like `:closure-defines`. ([#135](https://github.com/boot-clj/boot-cljs/issues/135))
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.0.0...master)**
 

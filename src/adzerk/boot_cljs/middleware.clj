@@ -3,7 +3,8 @@
             [boot.file :as file]
             [boot.util :as butil]
             [clojure.java.io :as io]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [adzerk.boot-cljs.meta-merge :as meta-merge]))
 
 ;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -40,9 +41,10 @@
 (defn compiler-options
   [{:keys [opts main] :as ctx}
    {:keys [compiler-options] :as task-options}]
-  (assoc ctx :opts (merge (:compiler-options main)
-                          compiler-options
-                          (select-keys task-options [:optimizations :source-map]))))
+  (assoc ctx :opts (meta-merge/meta-merge
+                     (:compiler-options main)
+                     compiler-options
+                     (select-keys task-options [:optimizations :source-map]))))
 
 (defn set-option [ctx k value]
   (when-let [current-value (get-in ctx [:opts k])]
