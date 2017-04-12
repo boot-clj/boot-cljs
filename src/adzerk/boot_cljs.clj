@@ -110,6 +110,28 @@
                    :tmp-out (core/tmp-dir!)
                    :main-ns-name (name (gensym "main"))}}))
 
+(defn assert-cljs-edn!
+  "Validate boot-cljs specific .cljs.edn options.
+
+  Check https://github.com/boot-clj/boot-cljs/blob/master/docs/cljs.edn.md
+  for documentation about options."
+  [{:keys [main] :as ctx}]
+  (assert (and (every? (fn [v]
+                         (and (symbol? v) (not (namespace v))))
+                       (:require main)))
+          (str "Every .cljs.edn :require item should be a symbol referring to a namespace, "
+               "i.e. symbol should only have a name:\n"
+               (:require main)))
+
+  (assert (and (every? (fn [v]
+                         (and (symbol? v) (and (namespace v) (name v))))
+                       (:init-fns main)))
+          (str "Every .cljs.edn :init-fns item should a be symbol referring to a function, "
+               "i.e. symbol should have both a namespace and a name:\n"
+               (:init-fns main)))
+
+  ctx)
+
 (defn- compile-1
   [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn} deps-changed?]
   (swap! compilers (fn [compilers]
@@ -121,6 +143,7 @@
         ctx (-> initial-ctx
                 (assoc :main (-> (read-cljs-edn cljs-edn)
                                  (assoc :ns-name (:main-ns-name initial-ctx))))
+                (assert-cljs-edn!)
                 (wrap/compiler-options task-opts)
                 (wrap/main write-main?)
                 (wrap/modules)
