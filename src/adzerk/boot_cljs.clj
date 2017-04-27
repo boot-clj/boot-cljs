@@ -213,7 +213,7 @@
   If no .cljs.edn files exists, default one is created. It will depend on
   all .cljs files in fileset.
 
-  Available --optimization levels (default 'none'):
+  Available --optimizations levels (default 'none'):
 
   * none         No optimizations. Bypass the Closure compiler completely.
   * whitespace   Remove comments, unnecessary whitespace, and punctuation.
