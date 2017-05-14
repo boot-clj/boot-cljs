@@ -11,6 +11,10 @@
   can be used to add `cljs-time` dependency and Boot-cljs will find this without restarting
   the whole Boot process.
 - Add validation for Boot-cljs `.cljs.edn` options ([#148](https://github.com/boot-clj/boot-cljs/issues/148))
+- Support foreign library `:preprocess` option
+  - Automatically require namespaces referred in namespaces `:preprocess` options, e.g. `:cljsjs.babel-standalone/babel`
+  - Add `:compiler-pod-init` option to `.cljs.edn`, this can be used to run code in the
+  Boot-cljs compiler pod to initialize `js-transforms` multimethod.
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.0.0...master)**
 
