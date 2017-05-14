@@ -54,7 +54,7 @@
   set the compiler :output-to option accordingly. The :output-to will be derived
   from the path of the .cljs.edn file (e.g. foo/bar.cljs.edn will produce the
   foo.bar CLJS namespace with output to foo/bar.js)."
-  [{:keys [tmp-src tmp-out main] :as ctx} write-main?]
+  [{:keys [tmp-src tmp-out main main-ns-name] :as ctx} write-main?]
   (let [out-rel-path (if-let [output-dir (:output-dir (:opts ctx))]
                        output-dir
                        (cljs-edn-path->output-dir-path (:rel-path main)))
@@ -65,7 +65,7 @@
                        (util/path tmp-out output-to)
                        (util/path tmp-out (cljs-edn-path->js-path (:rel-path main))))
 
-        cljs-path    (util/path "boot" "cljs" (str (:ns-name main) ".cljs"))
+        cljs-path    (util/path "boot" "cljs" (str main-ns-name ".cljs"))
         cljs-file    (io/file tmp-src cljs-path)
         cljs-ns      (symbol (util/path->ns cljs-path))
         init-fns     (:init-fns main)
