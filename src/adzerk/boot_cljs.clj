@@ -51,6 +51,7 @@
   [tmp-file]
   (let [file (core/tmp-file tmp-file)
         path (core/tmp-path tmp-file)]
+    ;; FIXME: Better to use edn/read-string instead?
     (assoc (read-string (slurp file))
            :path     (.getPath file)
            :rel-path path
@@ -61,7 +62,7 @@
   seq of all compiled JS files known to the CLJS compiler in dependency order,
   as paths relative to the :output-to compiled JS file."
   [{:keys [tmp-src tmp-out main opts] :as ctx} macro-changes pod]
-  (let [{:keys [output-dir]}  opts
+  (let [{:keys [output-dir]} opts
         rel-path #(.getPath (file/relative-to tmp-out %))]
     (pod/with-call-in pod
       (adzerk.boot-cljs.impl/reload-macros!))
@@ -98,17 +99,22 @@
       (update-in [:dependencies] into @deps)
       (update-in [:directories] conj (.getPath tmp-src))) )
 
-(defn- new-pod! [tmp-src]
-  (let [env (new-env tmp-src)]
-    (future (doto (pod/make-pod env) assert-clojure-version!))))
+(defn run-compiler-pod-init [pod code]
+  (when code
+    (pod/with-eval-in pod ~code)))
 
 (defn- make-compiler
-  [cljs-edn]
-  (let [tmp-src (core/tmp-dir!)]
-    {:pod         (new-pod! tmp-src)
-     :initial-ctx {:tmp-src tmp-src
+  [cljs-edn-content]
+  (let [tmp-src (core/tmp-dir!)
+        env (new-env tmp-src)]
+    {:initial-ctx {:tmp-src tmp-src
                    :tmp-out (core/tmp-dir!)
-                   :main-ns-name (name (gensym "main"))}}))
+                   :main-ns-name (name (gensym "main"))}
+     :pod (future
+            (doto (pod/make-pod env)
+              (assert-clojure-version!)
+              ;; Note: only ran when initializing, not run when .cljs.edn is updated
+              (run-compiler-pod-init (:compiler-pod-init cljs-edn-content))))}))
 
 (defn assert-cljs-edn!
   "Validate boot-cljs specific .cljs.edn options.
@@ -134,15 +140,15 @@
 
 (defn- compile-1
   [compilers task-opts macro-changes write-main? {:keys [path] :as cljs-edn} deps-changed?]
-  (swap! compilers (fn [compilers]
-                     (if (contains? compilers path)
-                       compilers
-                       (assoc compilers path (make-compiler cljs-edn)))))
+  (let [cljs-edn-content (read-cljs-edn cljs-edn)
+        _ (swap! compilers (fn [compilers]
+                             (if (contains? compilers path)
+                               compilers
+                               (assoc compilers path (make-compiler cljs-edn-content)))))
 
-  (let [{:keys [pod initial-ctx]} (get @compilers path)
+        {:keys [initial-ctx pod]} (get @compilers path)
         ctx (-> initial-ctx
-                (assoc :main (-> (read-cljs-edn cljs-edn)
-                                 (assoc :ns-name (:main-ns-name initial-ctx))))
+                (assoc :main cljs-edn-content)
                 (assert-cljs-edn!)
                 (wrap/compiler-options task-opts)
                 (wrap/main write-main?)
