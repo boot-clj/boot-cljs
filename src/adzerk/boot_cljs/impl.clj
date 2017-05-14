@@ -4,6 +4,7 @@
             [boot.pod :as pod]
             [boot.util :as butil]
             [clojure.string :as str]
+            [clojure.edn :as edn]
             [cljs.analyzer :as ana]
             [cljs.analyzer.api :as ana-api :refer [empty-state warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
@@ -75,8 +76,11 @@
       e)))
 
 (defn load-js-transforms! [opts]
-  ;; TODO: deps.cljs from classpath
-  (doseq [{:keys [preprocess]} (:foreign-libs opts)
+  (doseq [{:keys [preprocess]} (concat (:foreign-libs opts)
+                                       ;; Read all deps.cljs files from classpath
+                                       (->> (.getResources (.. Thread currentThread getContextClassLoader) "deps.cljs")
+                                            (enumeration-seq)
+                                            (mapcat (comp :foreign-libs edn/read-string slurp))) )
           ;; Check if preprocess value is namespaced keyword
           :when (and (keyword? preprocess) (namespace preprocess))
           ;; Only require the namespace if it not already loaded
