@@ -24,3 +24,7 @@
 (deftest a-test
   (testing "Compiling with .cljs.edn"
     (is (= "test passed" (hunit-page "/demo/index.html")))))
+
+(deftest npm-test
+  (testing "Includes npm modules when present"
+    (is (= "test passed 00042" (hunit-page "/demo/other.html")))))

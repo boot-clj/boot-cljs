@@ -1,1 +1,2 @@
-{:require [demo.other]}
+{:require [demo.other]
+ :compiler-options {:npm-deps {:left-pad "1.1.3"}}}
