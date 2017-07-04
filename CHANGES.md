@@ -15,6 +15,9 @@
   - Automatically require namespaces referred in namespaces `:preprocess` options, e.g. `:cljsjs.babel-standalone/babel`
   - Add `:compiler-pod-init` option to `.cljs.edn`, this can be used to run code in the
   Boot-cljs compiler pod to initialize `js-transforms` multimethod.
+- During `:advanced` compilation set the `:output-wrapper` option to `true`. 
+  This is not the ClojureScript compiler default but more friendly for regular use.
+  This makes `boot-cljs` behave similar to `lein-cljsbuild` as well. ([#64](https://github.com/boot-clj/boot-cljs/issues/64))
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.0.0...master)**
 

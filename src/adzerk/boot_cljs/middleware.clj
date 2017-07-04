@@ -123,3 +123,11 @@
                 sm)]
       (assoc-in ctx [:opts :source-map] sm))
     ctx))
+
+(defn non-standard-defaults
+  "Sets defaults differing from the ones provided by the ClojureScript compiler."
+  [{:keys [opts] :as ctx}]
+  (let [advanced? (= :advanced (:optimizations opts))]
+    (cond-> ctx
+      (and advanced? (nil? (:output-wrapper opts)))
+      (assoc-in [:opts :output-wrapper] true))))
