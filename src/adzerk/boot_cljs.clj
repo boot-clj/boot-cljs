@@ -99,10 +99,6 @@
       (update-in [:dependencies] into @deps)
       (update-in [:directories] conj (.getPath tmp-src))) )
 
-(defn run-compiler-pod-init [pod code]
-  (when code
-    (pod/with-eval-in pod ~code)))
-
 (defn- make-compiler
   [cljs-edn-content]
   (let [tmp-src (core/tmp-dir!)
@@ -112,9 +108,7 @@
                    :main-ns-name (name (gensym "main"))}
      :pod (future
             (doto (pod/make-pod env)
-              (assert-clojure-version!)
-              ;; Note: only ran when initializing, not run when .cljs.edn is updated
-              (run-compiler-pod-init (:compiler-pod-init cljs-edn-content))))}))
+              (assert-clojure-version!)))}))
 
 (defn assert-cljs-edn!
   "Validate boot-cljs specific .cljs.edn options.
@@ -146,7 +140,7 @@
                                compilers
                                (assoc compilers path (make-compiler cljs-edn-content)))))
 
-        {:keys [initial-ctx pod]} (get @compilers path)
+        {:keys [pod initial-ctx]} (get @compilers path)
         ctx (-> initial-ctx
                 (assoc :main cljs-edn-content)
                 (assert-cljs-edn!)
