@@ -153,7 +153,8 @@
                 (wrap/compiler-options task-opts)
                 (wrap/main write-main?)
                 (wrap/modules)
-                wrap/source-map)
+                wrap/source-map
+                wrap/non-standard-defaults)
         tmp (:tmp-out initial-ctx)
         out (.getPath (file/relative-to tmp (-> ctx :opts :output-to)))]
 
