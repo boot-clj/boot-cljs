@@ -49,19 +49,19 @@
   [e source-paths dirs]
   (let [{:keys [type tag file line column] :as data} (util/merge-cause-ex-data e)
         ; Get the message without location info
-        message (.getMessage (util/last-cause e))
+        message (util/last-cause-message e)
         ; Sometimes filepath is a URI
         file (if file (str/replace file #"^file:" ""))
         file (util/find-original-path source-paths dirs file)
         ; Remove file info from message
-        message (if (and file (re-matches #".*in file.*" message))
-                  (first (str/split message #"\s*in file\s*"))
+        message (if (and file message (re-matches #".*in file.*" message))
+                  ; Add file info with pretty path
+                  (cond-> (first (str/split message #"\s*in file\s*"))
+
+                    line (str " at line " line)
+                    (and line column) (str ", column " column)
+                    file (str " in file " file))
                   message)
-        ; Add file info with pretty path
-        message (cond-> message
-                  line (str " at line " line)
-                  (and line column) (str ", column " column)
-                  file (str " in file " file))
         cljs-error? (or (= :reader-exception type)
                         (= :cljs/analysis-error tag))]
 
@@ -104,10 +104,13 @@
                                           ;; of that is unprintable.
                                           :extra (cond-> extra
                                                    (:fexpr extra) (update :fexpr dissoc :env))}]
-                        (butil/warn "WARNING: %s %s\n" s (if (:line env)
-                                                           (str "at line " (:line env) " " path)
-                                                           (when path
-                                                             (str "in file " path))))
+                        (butil/warn (str "WARNING: "
+                                         s
+                                         (if (:line env)
+                                           (str "at line " (:line env) " " path)
+                                           (when path
+                                             (str "in file " path)))
+                                         "\n"))
                         (butil/dbug* "%s\n" (butil/pp-str warning-data))
                         (swap! warnings conj warning-data)))))]
     (try
