@@ -102,11 +102,11 @@
     (update-in ctx [:opts :modules]
                (fn [modules]
                  (into (empty modules)
-                       (fn [[k v]]
-                         [k (if-let [output-to (:output-to v)]
-                              (assoc v :output-to (util/path tmp-out output-to))
-                              (assoc v :output-to (util/path tmp-out (cljs-edn-path->module-path (:rel-path main) k))))])
-                       modules)))
+                       (map (fn [[k v]]
+                              [k (if-let [output-to (:output-to v)]
+                                   (assoc v :output-to (util/path tmp-out output-to))
+                                   (assoc v :output-to (util/path tmp-out (cljs-edn-path->module-path (:rel-path main) k))))])
+                            modules))))
     ctx))
 
 (defn source-map
