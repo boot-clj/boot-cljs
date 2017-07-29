@@ -1,4 +1,4 @@
-## Unreleased
+## 2.1.0 (29.7.2017)
 
 - Require `:main` namespace in our shim ns requires ([#139](https://github.com/boot-clj/boot-cljs/issues/139))
 - Don't set `:source-map-path` automatically ([#157](https://github.com/boot-clj/boot-cljs/pull/157), [#136](https://github.com/boot-clj/boot-cljs/issues/136))
@@ -11,11 +11,11 @@
   can be used to add `cljs-time` dependency and Boot-cljs will find this without restarting
   the whole Boot process.
 - Add validation for Boot-cljs `.cljs.edn` options ([#148](https://github.com/boot-clj/boot-cljs/issues/148))
-- During `:advanced` compilation set the `:output-wrapper` option to `true`. 
+- During `:advanced` compilation set the `:output-wrapper` option to `true`.
   This is not the ClojureScript compiler default but more friendly for regular use.
   This makes `boot-cljs` behave similar to `lein-cljsbuild` as well. ([#64](https://github.com/boot-clj/boot-cljs/issues/64))
 
-**[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.0.0...master)**
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.0.0...2.1.0)**
 
 ## 2.0.0 (10.3.2017)
 
