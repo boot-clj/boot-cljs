@@ -1,3 +1,7 @@
+## 2.1.1 (29.7.2017)
+
+- Fix `:modules` `:output-to` handling
+
 ## 2.1.0 (29.7.2017)
 
 - Require `:main` namespace in our shim ns requires ([#139](https://github.com/boot-clj/boot-cljs/issues/139))
