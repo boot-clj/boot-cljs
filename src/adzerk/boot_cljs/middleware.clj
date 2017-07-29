@@ -73,7 +73,7 @@
         ;; We set out own shim ns as :main, but if user provides :main,
         ;; include that in our shim ns requires
         requires     (if-let [main (:main (:opts ctx))]
-                       (conj requires main)
+                       (conj requires (symbol main))
                        requires)
         init-nss     (into requires (->> init-fns (keep namespace) (map symbol)))]
     (.mkdirs out-file)
