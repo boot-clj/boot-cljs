@@ -34,9 +34,6 @@ For more [comprehensive guide](https://github.com/adzerk-oss/boot-cljs/wiki/Usag
 
 ### Further Reading
 
-- Check [differences to Lein Cljsbuild](https://github.com/adzerk-oss/boot-cljs/wiki/Differences-to-Lein-cljsbuild)
-when porting a project.
-- [Simple example](https://github.com/adzerk-oss/boot-cljs/wiki/Example)
 - [boot-cljs-example](https://github.com/adzerk/boot-cljs-example) - An example project with a local web server, CLJS REPL, and live-reload.
 - [Saapas example project](https://github.com/Deraen/saapas) - Opinionated example project for Boot.
 - [Tenzing project template](https://github.com/martinklepsch/tenzing) - ClojureScript application template.
