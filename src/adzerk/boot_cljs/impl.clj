@@ -107,9 +107,9 @@
                         (butil/warn (str "WARNING: "
                                          s
                                          (if (:line env)
-                                           (str "at line " (:line env) " " path)
+                                           (str " at line " (:line env) " " path)
                                            (when path
-                                             (str "in file " path)))
+                                             (str " in file " path)))
                                          "\n"))
                         (butil/dbug* "%s\n" (butil/pp-str warning-data))
                         (swap! warnings conj warning-data)))))]
