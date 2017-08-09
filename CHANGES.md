@@ -1,6 +1,16 @@
+## Unreleased
+
+- Fix missing exception message
+- Handle new exception location format
+- Escape `%` in exception messages if using Boot &lt;2.7.2 ([Boot fix](https://github.com/boot-clj/boot/commit/c07b08751ad195e6e6349cb7c2f826c95a8e8186))
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.1.1...master)**
+
 ## 2.1.1 (29.7.2017)
 
 - Fix `:modules` `:output-to` handling
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.1.0...2.1.1)**
 
 ## 2.1.0 (29.7.2017)
 
