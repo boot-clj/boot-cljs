@@ -39,6 +39,29 @@
        (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))
        vec))
 
+;; Checks if https://github.com/boot-clj/boot/commit/c07b08751ad195e6e6349cb7c2f826c95a8e8186
+;; is present.
+;; The change will preserve %% as % are escapted before format, and will add newline.
+(def new-boot?
+  (try
+    (let [message (with-out-str
+                    (binding [*err* *out*]
+                      (butil/print-ex (ex-info "%%s" {:boot.util/omit-stacktrace? true}))))]
+      (and message
+           (.contains message "%%")
+           (.contains message "\n")))
+    (catch Throwable _
+      false)))
+
+(defn- ensure-ends-in-newline [s]
+  (if s
+    (if (.endsWith s "\n")
+      s
+      (str s "\n"))))
+
+(defn- escape-format-string [s]
+  (str/replace s #"%" "%%"))
+
 (defn handle-ex
   "Rethrows an interesting exception if possible or the original exception.
 
@@ -76,7 +99,9 @@
 
     (ex-info
       ;; For now, when Boot shows the message with omit-stacktrace, no newline is automatically appended
-      (if cljs-error? (str message "\n") message)
+      (if new-boot?
+        message
+        (-> message ensure-ends-in-newline escape-format-string))
       (-> data
           (assoc :from :boot-cljs)
           (cond->
