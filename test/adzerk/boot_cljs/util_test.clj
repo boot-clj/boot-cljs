@@ -47,3 +47,11 @@
 
 (deftest merge-cause-ex-data-test
   (is (= {:a 1 :b 2} (merge-cause-ex-data (ex-info "a" {:a 1} (ex-info "b" {:b 2}))))))
+
+(deftest last-cause-message-test
+  (is (= "a" (last-cause-message (Exception. "a"))))
+  (is (= "b" (last-cause-message (Exception. "a" (Exception. "b")))))
+  (is (= "c" (last-cause-message (Exception. "a" (Exception. "b" (Exception. "c"))))))
+  (is (= "b" (last-cause-message (Exception. "a" (Exception. "b" (Exception.))))))
+  (is (= "b" (last-cause-message (Exception. "a" (Exception. (Exception. "b"))))))
+  )

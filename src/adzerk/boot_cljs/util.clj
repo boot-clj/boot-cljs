@@ -82,7 +82,7 @@
 
 (defn last-cause-message [ex]
   (loop [ex ex
-         prev-msg (.getMessage ex)]
-    (if (and (.getCause ex) (.getMessage (.getCause ex)))
-      (recur (.getCause ex) (.getMessage ex))
-      prev-msg)))
+         last-msg (.getMessage ex)]
+    (if-let [c (.getCause ex)]
+      (recur c (or (.getMessage c) last-msg))
+      last-msg)))
