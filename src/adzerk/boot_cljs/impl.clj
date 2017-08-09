@@ -47,20 +47,29 @@
    If ex-data has file property, it is changed to contain path in original source-paths.
    Exceptino message is rewriten to contain fixed path."
   [e source-paths dirs]
-  (let [{:keys [type tag file line column] :as data} (util/merge-cause-ex-data e)
+  (let [{:keys [type tag file line] :as data} (util/merge-cause-ex-data e)
+        column (or (:col data) (:column data))
+
         ; Get the message without location info
         message (util/last-cause-message e)
         ; Sometimes filepath is a URI
         file (if file (str/replace file #"^file:" ""))
-        file (util/find-original-path source-paths dirs file)
-        ; Remove file info from message
-        message (if (and file message (re-matches #".*in file.*" message))
-                  ; Add file info with pretty path
-                  (cond-> (first (str/split message #"\s*in file\s*"))
-
-                    line (str " at line " line)
-                    (and line column) (str ", column " column)
-                    file (str " in file " file))
+        real-file (util/find-original-path source-paths dirs file)
+        ; Replace tmpdir path with real file path
+        message (if (and message file real-file)
+                  (.replace message file real-file)
+                  message)
+        file real-file
+        ; Add file info if message doesn't contain it but it is available
+        message (if (and message file (not (str/includes? message file)))
+                  (str
+                    (if file (str file " "))
+                    (if (or line column)
+                      (str "["
+                           (if line (str "line " line))
+                           (if column (str ", col " column))
+                           "] "))
+                    message)
                   message)
         cljs-error? (or (= :reader-exception type)
                         (= :cljs/analysis-error tag))]
