@@ -1,3 +1,10 @@
+## Unreleased
+
+- Fix `:source-map` option logic to allow disabling the option when doing optimized build.
+    - If `:source-map` is string (i.e. path), use value as is, instead of setting new value based on `:output-to`.
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.1.2...master)**
+
 ## 2.1.2 (2017-08-17)
 
 - Fix missing exception message

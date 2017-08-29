@@ -114,13 +114,16 @@
   [{:keys [opts] :as ctx}]
   (if (contains? opts :source-map)
     (let [optimizations (:optimizations opts :none)
-          sm (-> opts :output-to (str ".map"))
           ; Under :none optimizations only true and false are valid values
           ; Same if :modules is used.
           ; https://github.com/clojure/clojurescript/wiki/Compiler-Options#source-map
           sm  (if (or (= optimizations :none) (:modules opts))
                 (boolean (:source-map opts))
-                sm)]
+                ;; If path is already provided, use that
+                (if (string? (:source-map opts))
+                  (:source-map opts)
+                  ;; If non-path is provided, generate path, if the given value is truthy
+                  (and (:source-map opts) (-> opts :output-to (str ".map")))))]
       (assoc-in ctx [:opts :source-map] sm))
     ctx))
 
