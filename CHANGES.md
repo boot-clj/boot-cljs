@@ -1,3 +1,10 @@
+## Unreleased (2017-09-08)
+
+- Fix setting `:modules` `:output-to` automatically ([#174](https://github.com/boot-clj/boot-cljs/issues/174))
+- Fix using Node packages and native requires with Node.js ([#175](https://github.com/boot-clj/boot-cljs/issues/175))
+
+**[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.1.3...master)**
+
 ## 2.1.3 (2017-08-29)
 
 - Fix `:source-map` option logic to allow disabling the option when doing optimized build.
