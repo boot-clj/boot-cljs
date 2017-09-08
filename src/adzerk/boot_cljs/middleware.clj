@@ -31,10 +31,6 @@
   [cljs-edn-path]
   (str (.replaceAll cljs-edn-path "\\.cljs\\.edn$" "") ".js"))
 
-(defn- cljs-edn-path->module-path
-  [cljs-edn-path module-k]
-  (.getPath (io/file (str (.replaceAll cljs-edn-path "\\.cljs\\.edn$" "")) (str (name module-k) ".js"))))
-
 ;; middleware ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn compiler-options
@@ -105,7 +101,7 @@
                        (map (fn [[k v]]
                               [k (if-let [output-to (:output-to v)]
                                    (assoc v :output-to (util/path tmp-out output-to))
-                                   (assoc v :output-to (util/path tmp-out (cljs-edn-path->module-path (:rel-path main) k))))])
+                                   (assoc v :output-to (util/path (-> ctx :opts :output-dir) (str (name k) ".js"))))])
                             modules))))
     ctx))
 
