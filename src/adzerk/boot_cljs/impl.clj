@@ -6,7 +6,8 @@
             [clojure.string :as str]
             [clojure.edn :as edn]
             [cljs.analyzer :as ana]
-            [cljs.analyzer.api :as ana-api :refer [empty-state warning-enabled?]]
+            [cljs.env :as env]
+            [cljs.analyzer.api :as ana-api :refer [warning-enabled?]]
             [cljs.build.api :as build-api :refer [build inputs target-file-for-cljs-ns]]
             [clojure.java.io :as io]
             [adzerk.boot-cljs.util :as util]
@@ -14,7 +15,7 @@
 
 ; Because this ns is loaded in pod, it's private to one cljs task.
 ; Compiler env is a atom.
-(def ^:private stored-env (empty-state))
+(def ^:private stored-env (atom nil))
 
 (defn ns-dependencies
   "Given a namespace as a symbol return list of namespaces required by the namespace."
@@ -147,13 +148,15 @@
                                          "\n"))
                         (butil/dbug* "%s\n" (butil/pp-str warning-data))
                         (swap! warnings conj warning-data)))))]
+    ;; ana-api/empty-state doesn't take options, so need to use this instead
+    (swap! stored-env #(or % (env/default-compiler-env opts)))
     (try
       (build
         (inputs input-path)
         (assoc opts :warning-handlers [handler])
-        stored-env)
+        @stored-env)
       {:warnings  @warnings
-       :dep-order (dep-order stored-env opts)}
+       :dep-order (dep-order @stored-env opts)}
       (catch Exception e
         {:exception (util/serialize-object (handle-ex e source-paths dirs))}))))
 
@@ -171,12 +174,13 @@
 
 (defn backdate-macro-dependants!
   [output-dir changed-files]
-  (doseq [cljs-ns (->> changed-files
-                       (map (comp symbol util/path->ns))
-                       (build-api/cljs-dependents-for-macro-namespaces stored-env))]
-    ; broken
-    ; (build-api/mark-cljs-ns-for-recompile! cljs-ns output-dir)
-    (let [f (build-api/target-file-for-cljs-ns cljs-ns output-dir)]
-      (when (.exists f)
-        (butil/dbug "Backdate macro dependant cljs ns: %s\n" cljs-ns)
-        (.setLastModified f 5000)))))
+  (if @stored-env
+    (doseq [cljs-ns (->> changed-files
+                         (map (comp symbol util/path->ns))
+                         (build-api/cljs-dependents-for-macro-namespaces @stored-env))]
+      ; broken
+      ; (build-api/mark-cljs-ns-for-recompile! cljs-ns output-dir)
+      (let [f (build-api/target-file-for-cljs-ns cljs-ns output-dir)]
+        (when (.exists f)
+          (butil/dbug "Backdate macro dependant cljs ns: %s\n" cljs-ns)
+          (.setLastModified f 5000))))))
