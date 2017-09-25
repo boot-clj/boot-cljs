@@ -1,9 +1,10 @@
-## Unreleased (2017-09-08)
+## 2.1.4 (2017-09-25)
 
 - Fix setting `:modules` `:output-to` automatically ([#174](https://github.com/boot-clj/boot-cljs/issues/174))
 - Fix using Node packages and native requires with Node.js ([#175](https://github.com/boot-clj/boot-cljs/issues/175))
-- Uses `java.util.Base64` instead of `javax.xml.bind.DatatypeConverter`, to support Java 9
+- Uses `java.util.Base64` instead of `javax.xml.bind.DatatypeConverter`, to support Java 9 ([#178](https://github.com/boot-clj/boot-cljs/issues/178))
     - Breaks Java 1.7
+- Somehow fixes NPE when using `:infer-externs` (not sure what caused this...) ([#172](https://github.com/boot-clj/boot-cljs/issues/172))
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.1.3...master)**
 
