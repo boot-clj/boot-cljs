@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [boot.file :as file])
-  (:import [javax.xml.bind DatatypeConverter]
+  (:import [java.util Base64]
            [java.io ObjectInputStream ObjectOutputStream ByteArrayOutputStream ByteArrayInputStream]))
 
 (defn path->js
@@ -54,13 +54,13 @@
   (with-open [bos (ByteArrayOutputStream.)
               out (ObjectOutputStream. bos)]
     (.writeObject out e)
-    (DatatypeConverter/printBase64Binary (.toByteArray bos))))
+    (.encodeToString (Base64/getEncoder) (.toByteArray bos))))
 
 (defn deserialize-object
-  "Deserialize given Base64 encoded string using Object Streams and return the
+  "Deserialize given Base64 encoding string using Object Streams and return the
   Object."
   [ba]
-  (with-open [bis (ByteArrayInputStream. (DatatypeConverter/parseBase64Binary ba))
+  (with-open [bis (ByteArrayInputStream. (.decode (Base64/getDecoder) ba))
               in  (ObjectInputStream. bis)]
     (.readObject in)))
 
