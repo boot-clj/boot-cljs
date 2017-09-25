@@ -5,6 +5,7 @@
 * Provides the `cljs` task for compiling ClojureScript to JavaScript
 * Supports [ClojureScript versions](https://github.com/clojure/clojurescript/blob/master/changes.md) since 1.7.28
 * Works since Boot version 2.6.0 but 2.7.0 is recommended for better error reporting
+* Requires Java 8+
 * Provides a mechanism by which multiple multiple JS applications can be
   compiled in the same project.
 * **Related projects:** [boot-reload](https://github.com/adzerk-oss/boot-reload) and [boot-cljs-repl](https://github.com/adzerk-oss/boot-cljs-repl)

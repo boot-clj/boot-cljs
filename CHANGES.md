@@ -2,6 +2,8 @@
 
 - Fix setting `:modules` `:output-to` automatically ([#174](https://github.com/boot-clj/boot-cljs/issues/174))
 - Fix using Node packages and native requires with Node.js ([#175](https://github.com/boot-clj/boot-cljs/issues/175))
+- Uses `java.util.Base64` instead of `javax.xml.bind.DatatypeConverter`, to support Java 9
+    - Breaks Java 1.7
 
 **[compare](https://github.com/adzerk-oss/boot-cljs/compare/2.1.3...master)**
 
