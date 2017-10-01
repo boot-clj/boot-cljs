@@ -59,3 +59,9 @@ not `:none` and `:modules` is not used, `:source-map` is automatically set to
 Should work similar to `:output-to`. If user provides a value, it is prepended with
 path to Boot-cljs temp dir, else default value is created based on relative path of `.cljs.edn`
 file and name of the module.
+
+## `:output-wrapper`
+
+When doing `:optimization :advanced` build, if `:output-wrapper` is `nil` it is set enabled. This follows Lein-cljsbuild.
+
+See more: [#64](https://github.com/boot-clj/boot-cljs/issues/64)
