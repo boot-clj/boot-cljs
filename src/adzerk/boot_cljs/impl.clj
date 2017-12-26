@@ -108,8 +108,7 @@
       (-> data
           (assoc :from :boot-cljs)
           (cond->
-            spec-error? (dissoc :clojure.spec/spec)
-            spec-error? (dissoc :clojure.spec.alpha/spec)
+            spec-error? (dissoc :clojure.spec.alpha/spec :clojure.spec/spec)
             file (assoc :file file)
             cljs-error? (assoc :boot.util/omit-stacktrace? true))))))
 
