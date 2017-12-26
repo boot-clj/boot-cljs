@@ -95,6 +95,8 @@
                            "] "))
                     message)
                   message)
+        spec-error? (or (:clojure.spec/spec data)
+                        (:clojure.spec.alpha/spec data))
         cljs-error? (or (= :reader-exception type)
                         (= :cljs/analysis-error tag))]
 
@@ -106,9 +108,10 @@
       (-> data
           (assoc :from :boot-cljs)
           (cond->
+            spec-error? (dissoc :clojure.spec/spec)
+            spec-error? (dissoc :clojure.spec.alpha/spec)
             file (assoc :file file)
-            cljs-error? (assoc :boot.util/omit-stacktrace? true)))
-      e)))
+            cljs-error? (assoc :boot.util/omit-stacktrace? true))))))
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
@@ -161,9 +164,9 @@
        (let [ex (handle-ex e source-paths dirs)]
          ;; attempt to return serialized exception
          (try {:exception (util/serialize-object ex)}
-           ;; doesnt work for clojure.spec exceptions
+           ;; catch serialization exception
            (catch Exception e
-             ;; throw now instead
+             ;; rethrow original exception
              (throw ex))))))))
 
 
