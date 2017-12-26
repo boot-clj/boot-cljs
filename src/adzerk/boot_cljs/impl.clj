@@ -158,7 +158,14 @@
       {:warnings  @warnings
        :dep-order (dep-order @stored-env opts)}
       (catch Exception e
-        {:exception (util/serialize-object (handle-ex e source-paths dirs))}))))
+       (let [ex (handle-ex e source-paths dirs)]
+         ;; attempt to return serialized exception
+         (try {:exception (util/serialize-object ex)}
+           ;; doesnt work for clojure.spec exceptions
+           (catch Exception e
+             ;; throw now instead
+             (throw ex))))))))
+
 
 (def tracker (atom nil))
 
