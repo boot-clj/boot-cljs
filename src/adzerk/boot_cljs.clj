@@ -15,7 +15,7 @@
 
 (def cljs-version "1.7.228")
 
-(defn- cljs-depdendency []
+(defn- cljs-dependency []
   (let [proj-deps    (core/get-env :dependencies)
         cljs-dep?    (first (filter (comp #{'org.clojure/clojurescript} first) proj-deps))
         cljs-exists? (io/resource "cljs/build/api.clj")]
@@ -30,7 +30,7 @@
 (def ^:private deps
   "ClojureScript dependency to load in the pod if
    none is provided via project"
-  (delay (filter identity [(cljs-depdendency)
+  (delay (filter identity [(cljs-dependency)
                            ['ns-tracker "0.3.0"]])))
 
 (def ^:private QUALIFIERS
