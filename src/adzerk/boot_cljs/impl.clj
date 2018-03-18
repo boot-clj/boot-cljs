@@ -23,7 +23,7 @@
   ([state ns]
    (vals (:requires (ana-api/find-ns state ns)))))
 
-(defn cljs-depdendency-graph [state]
+(defn cljs-dependency-graph [state]
   (let [all-ns (ana-api/all-ns state)
         all-ns-set (set all-ns)]
     (->> all-ns
@@ -34,7 +34,7 @@
                  {}))))
 
 (defn dep-order [env opts]
-  (->> (cljs-depdendency-graph env)
+  (->> (cljs-dependency-graph env)
        (kahn/topo-sort)
        reverse
        (map #(.getPath (target-file-for-cljs-ns % (:output-dir opts))))
