@@ -95,8 +95,12 @@
                            "] "))
                     message)
                   message)
-        spec-error? (or (:clojure.spec/spec data)
-                        (:clojure.spec.alpha/spec data))
+        ;; E.g. (defmacro foo [] (+ nil nil)) will cause exception where
+        ;; message is only " at line ..."
+        message (if (str/starts-with? message " at line ")
+                  (str "Compilation failed" message)
+                  message)
+        ;; NOTE: This probably matches any errors from macro compilation
         cljs-error? (or (= :reader-exception type)
                         (= :cljs/analysis-error tag))]
 
@@ -105,12 +109,14 @@
       (if new-boot?
         message
         (-> message ensure-ends-in-newline escape-format-string))
-      (-> data
-          (assoc :from :boot-cljs)
-          (cond->
-            spec-error? (dissoc :clojure.spec.alpha/spec :clojure.spec/spec)
-            file (assoc :file file)
-            cljs-error? (assoc :boot.util/omit-stacktrace? true))))))
+      (if cljs-error?
+        ;; Skip ex-data if it won't even be shown. This will avoid some serialization errors,
+        ;; as compiler or spec errors from macros only really need the message anyway.
+        {:boot.util/omit-stacktrace? true}
+        (-> data
+            (assoc :from :boot-cljs)
+            (cond->
+              file (assoc :file file)))))))
 
 (defn compile-cljs
   "Given a seq of directories containing CLJS source files and compiler options
@@ -160,13 +166,12 @@
       {:warnings  @warnings
        :dep-order (dep-order @stored-env opts)}
       (catch Exception e
-       (let [ex (handle-ex e source-paths dirs)]
-         ;; attempt to return serialized exception
-         (try {:exception (util/serialize-object ex)}
-           ;; catch serialization exception
-           (catch Exception e
-             ;; rethrow original exception
-             (throw ex))))))))
+        (let [ex (handle-ex e source-paths dirs)]
+          (try
+            {:exception (util/serialize-object ex)}
+            (catch Exception e
+              (butil/warn "Exception couldn't be serialized properly: %s, rethrowing original exception but it won't formatted perfectly. Please report this bug.\n" (.getMessage e))
+              (throw ex))))))))
 
 
 (def tracker (atom nil))

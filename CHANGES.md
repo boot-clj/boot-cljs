@@ -1,3 +1,10 @@
+## 2.1.5
+
+- Try handling exceptions in a way that serialization errors are less likely
+- Handle exceptions where ex-data can't be serialized
+    - This should print real exceptions for problematic cases, but the exceptions won't be
+    formatted perfectly.
+
 ## 2.1.4 (2017-09-25)
 
 - Fix setting `:modules` `:output-to` automatically ([#174](https://github.com/boot-clj/boot-cljs/issues/174))
