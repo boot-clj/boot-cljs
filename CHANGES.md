@@ -1,4 +1,4 @@
-## 2.1.5
+## 2.1.5 (2018-10-25)
 
 - Try handling exceptions in a way that serialization errors are less likely
 - Handle exceptions where ex-data can't be serialized
