@@ -85,9 +85,9 @@
        (map core/tmp-path)))
 
 (defn main-files [fileset ids]
-   (let [re-pat #(re-pattern (str "^\\Q" % "\\E\\.cljs\\.edn$"))
+   (let [rel-paths (map #(io/as-relative-path (str % ".cljs.edn")) ids)
          select (if (seq ids)
-                  #(core/by-re (map re-pat ids) %)
+                  #(core/by-path rel-paths %)
                   #(core/by-ext [".cljs.edn"] %))]
      (->> fileset
           core/input-files
